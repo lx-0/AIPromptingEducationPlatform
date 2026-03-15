@@ -47,10 +47,14 @@ export default async function DashboardPage() {
           </p>
         )}
 
-        <div className="mt-8 rounded-xl border border-gray-200 bg-white p-6 text-center text-gray-500">
-          <p className="text-sm">
-            Workshops and exercises are coming soon.
-          </p>
+        <div className="mt-8">
+          <a
+            href="/workshops"
+            className="block rounded-xl border border-gray-200 bg-white p-6 hover:border-blue-300 hover:shadow-sm transition-all text-center"
+          >
+            <p className="text-sm font-semibold text-blue-600">Browse workshops →</p>
+            <p className="mt-1 text-xs text-gray-500">View available workshops and start practising prompts.</p>
+          </a>
         </div>
       </div>
     </main>
