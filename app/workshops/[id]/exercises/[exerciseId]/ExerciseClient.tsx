@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import ReactMarkdown from "react-markdown";
+import { useToast } from "@/components/ToastProvider";
 
 type RubricCriterion = {
   criterion: string;
@@ -122,6 +123,7 @@ function LoadingSpinner({ className }: { className?: string }) {
 }
 
 export default function ExerciseClient({ exercise, workshopId }: Props) {
+  const { addToast } = useToast();
   const [prompt, setPrompt] = useState("");
   const [currentSubmission, setCurrentSubmission] = useState<Submission | null>(null);
   const [currentScore, setCurrentScore] = useState<Score | null>(null);
@@ -218,6 +220,11 @@ export default function ExerciseClient({ exercise, workshopId }: Props) {
             if (parsed.score) {
               finalScore = parsed.score;
               setCurrentScore(parsed.score);
+              const { total_score, max_score } = parsed.score;
+              addToast(
+                "success",
+                `Scored! ${total_score}/${max_score} pts (${max_score > 0 ? Math.round((total_score / max_score) * 100) : 0}%)`
+              );
             }
           }
           if (parsed.error) {
@@ -247,7 +254,9 @@ export default function ExerciseClient({ exercise, workshopId }: Props) {
       // Prepend to history
       setHistory((prev) => [newSubmission, ...prev]);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Unexpected error");
+      const message = err instanceof Error ? err.message : "Unexpected error";
+      setError(message);
+      addToast("error", message);
     } finally {
       setLoading(false);
     }

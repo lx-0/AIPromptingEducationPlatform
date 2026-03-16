@@ -3,10 +3,13 @@
 import { Suspense, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
+import { useToast } from "@/components/ToastProvider";
+
 function SignInForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const next = searchParams.get("next") ?? "/dashboard";
+  const { addToast } = useToast();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -26,7 +29,9 @@ function SignInForm() {
 
     if (!res.ok) {
       const body = await res.json();
-      setError(body.error ?? "Sign in failed");
+      const message = body.error ?? "Sign in failed";
+      setError(message);
+      addToast("error", message);
       setLoading(false);
       return;
     }

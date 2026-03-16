@@ -3,10 +3,13 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { useToast } from "@/components/ToastProvider";
+
 type Role = "instructor" | "trainee";
 
 export default function SignUpPage() {
   const router = useRouter();
+  const { addToast } = useToast();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -28,7 +31,9 @@ export default function SignUpPage() {
 
     if (!res.ok) {
       const body = await res.json();
-      setError(body.error ?? "Sign up failed");
+      const message = body.error ?? "Sign up failed";
+      setError(message);
+      addToast("error", message);
       setLoading(false);
       return;
     }
