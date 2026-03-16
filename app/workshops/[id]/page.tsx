@@ -14,6 +14,23 @@ type Workshop = {
   title: string;
   description: string | null;
   status: string;
+  instructor_id: string;
+};
+
+type WorkshopStats = {
+  total_submissions: string;
+  unique_trainees: string;
+  avg_score_pct: string | null;
+  enrolled_count: string;
+};
+
+type ExerciseStat = {
+  exercise_id: string;
+  exercise_title: string;
+  sort_order: number;
+  submission_count: string;
+  unique_submitters: string;
+  avg_score_pct: string | null;
 };
 
 export default async function WorkshopDetailPage({
@@ -29,7 +46,7 @@ export default async function WorkshopDetailPage({
   }
 
   const workshopResult = await pool.query<Workshop>(
-    "SELECT id, title, description, status FROM workshops WHERE id = $1",
+    "SELECT id, title, description, status, instructor_id FROM workshops WHERE id = $1",
     [id]
   );
   const workshop = workshopResult.rows[0];
@@ -38,11 +55,57 @@ export default async function WorkshopDetailPage({
     notFound();
   }
 
+  const isOwner = session.role === "instructor" && workshop.instructor_id === session.userId;
+
   const exercisesResult = await pool.query<Exercise>(
     "SELECT id, title, sort_order FROM exercises WHERE workshop_id = $1 ORDER BY sort_order ASC",
     [id]
   );
   const exercises = exercisesResult.rows;
+
+  let workshopStats: WorkshopStats | null = null;
+  let exerciseStats: ExerciseStat[] = [];
+
+  if (isOwner) {
+    const [statsResult, exerciseStatsResult] = await Promise.all([
+      pool.query<WorkshopStats>(
+        `SELECT
+           COUNT(DISTINCT s.id)::text AS total_submissions,
+           COUNT(DISTINCT s.trainee_id)::text AS unique_trainees,
+           ROUND(AVG(sc.total_score / NULLIF(sc.max_score, 0) * 100), 1)::text AS avg_score_pct,
+           (SELECT COUNT(*)::text FROM enrollments WHERE workshop_id = $1) AS enrolled_count
+         FROM exercises e
+         LEFT JOIN submissions s ON s.exercise_id = e.id
+         LEFT JOIN scores sc ON sc.submission_id = s.id
+         WHERE e.workshop_id = $1`,
+        [id]
+      ),
+      pool.query<ExerciseStat>(
+        `SELECT
+           e.id AS exercise_id,
+           e.title AS exercise_title,
+           e.sort_order,
+           COUNT(DISTINCT s.id)::text AS submission_count,
+           COUNT(DISTINCT s.trainee_id)::text AS unique_submitters,
+           ROUND(AVG(sc.total_score / NULLIF(sc.max_score, 0) * 100), 1)::text AS avg_score_pct
+         FROM exercises e
+         LEFT JOIN submissions s ON s.exercise_id = e.id
+         LEFT JOIN scores sc ON sc.submission_id = s.id
+         WHERE e.workshop_id = $1
+         GROUP BY e.id, e.title, e.sort_order
+         ORDER BY e.sort_order ASC`,
+        [id]
+      ),
+    ]);
+    workshopStats = statsResult.rows[0] ?? null;
+    exerciseStats = exerciseStatsResult.rows;
+  }
+
+  const enrolledCount = workshopStats ? Number(workshopStats.enrolled_count) : 0;
+  const completionPct =
+    workshopStats && enrolledCount > 0
+      ? Math.round((Number(workshopStats.unique_trainees) / enrolledCount) * 100)
+      : null;
 
   return (
     <main className="min-h-screen bg-gray-50">
@@ -66,9 +129,86 @@ export default async function WorkshopDetailPage({
           </Link>
         </div>
 
-        <h1 className="text-2xl font-bold text-gray-900">{workshop.title}</h1>
-        {workshop.description && (
-          <p className="mt-2 text-sm text-gray-600">{workshop.description}</p>
+        <div className="flex items-start justify-between">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">{workshop.title}</h1>
+            {workshop.description && (
+              <p className="mt-2 text-sm text-gray-600">{workshop.description}</p>
+            )}
+          </div>
+          {isOwner && (
+            <Link
+              href={`/workshops/${id}/submissions`}
+              className="shrink-0 rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:border-blue-300 hover:text-blue-700 transition-colors"
+            >
+              View submissions →
+            </Link>
+          )}
+        </div>
+
+        {isOwner && workshopStats && (
+          <div className="mt-8">
+            <h2 className="text-lg font-semibold text-gray-900 mb-4">Analytics</h2>
+
+            {/* Summary cards */}
+            <div className="grid grid-cols-3 gap-4 mb-6">
+              <div className="rounded-xl border border-gray-200 bg-white px-6 py-5">
+                <p className="text-xs font-medium uppercase tracking-wide text-gray-500">Total submissions</p>
+                <p className="mt-1 text-3xl font-bold text-gray-900">{workshopStats.total_submissions}</p>
+              </div>
+              <div className="rounded-xl border border-gray-200 bg-white px-6 py-5">
+                <p className="text-xs font-medium uppercase tracking-wide text-gray-500">Avg score</p>
+                <p className="mt-1 text-3xl font-bold text-gray-900">
+                  {workshopStats.avg_score_pct != null ? `${workshopStats.avg_score_pct}%` : "—"}
+                </p>
+              </div>
+              <div className="rounded-xl border border-gray-200 bg-white px-6 py-5">
+                <p className="text-xs font-medium uppercase tracking-wide text-gray-500">Completion</p>
+                <p className="mt-1 text-3xl font-bold text-gray-900">
+                  {completionPct != null ? `${completionPct}%` : "—"}
+                </p>
+                <p className="mt-0.5 text-xs text-gray-400">
+                  {workshopStats.unique_trainees} of {enrolledCount} enrolled
+                </p>
+              </div>
+            </div>
+
+            {/* Per-exercise stats */}
+            {exerciseStats.length > 0 && (
+              <div className="overflow-hidden rounded-xl border border-gray-200 bg-white">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-gray-200 bg-gray-50">
+                      <th className="px-4 py-3 text-left font-medium text-gray-600">#</th>
+                      <th className="px-4 py-3 text-left font-medium text-gray-600">Exercise</th>
+                      <th className="px-4 py-3 text-right font-medium text-gray-600">Submissions</th>
+                      <th className="px-4 py-3 text-right font-medium text-gray-600">Unique trainees</th>
+                      <th className="px-4 py-3 text-right font-medium text-gray-600">Avg score</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100">
+                    {exerciseStats.map((stat, index) => (
+                      <tr key={stat.exercise_id} className="hover:bg-gray-50 transition-colors">
+                        <td className="px-4 py-3 text-gray-400">{index + 1}</td>
+                        <td className="px-4 py-3 font-medium text-gray-900">{stat.exercise_title}</td>
+                        <td className="px-4 py-3 text-right text-gray-700">{stat.submission_count}</td>
+                        <td className="px-4 py-3 text-right text-gray-700">{stat.unique_submitters}</td>
+                        <td className="px-4 py-3 text-right">
+                          {stat.avg_score_pct != null ? (
+                            <span className="inline-flex items-center rounded-full bg-blue-50 px-2.5 py-0.5 text-xs font-medium text-blue-700">
+                              {stat.avg_score_pct}%
+                            </span>
+                          ) : (
+                            <span className="text-gray-400">—</span>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
         )}
 
         <div className="mt-8">
