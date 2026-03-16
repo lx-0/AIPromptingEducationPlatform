@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { randomBytes } from "crypto";
 import pool from "@/lib/db";
 import { getSession } from "@/lib/session";
 
@@ -13,9 +14,16 @@ export async function POST(
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
+  // Generate a unique invite code (8 hex chars) if not already set
+  const inviteCode = randomBytes(4).toString("hex");
+
   const result = await pool.query(
-    "UPDATE workshops SET status = 'published' WHERE id = $1 RETURNING *",
-    [id]
+    `UPDATE workshops
+     SET status = 'published',
+         invite_code = COALESCE(invite_code, $1)
+     WHERE id = $2
+     RETURNING *`,
+    [inviteCode, id]
   );
 
   if (result.rows.length === 0) {

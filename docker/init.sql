@@ -80,3 +80,18 @@ CREATE TABLE scores (
 );
 
 CREATE INDEX idx_scores_submission_id ON scores (submission_id);
+
+-- ============================================================
+-- enrollments
+-- Tracks which trainees have joined which workshops.
+-- ============================================================
+CREATE TABLE enrollments (
+  id           UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+  workshop_id  UUID        NOT NULL REFERENCES workshops(id) ON DELETE CASCADE,
+  trainee_id   UUID        NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  enrolled_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  UNIQUE (workshop_id, trainee_id)
+);
+
+CREATE INDEX idx_enrollments_workshop_id ON enrollments (workshop_id);
+CREATE INDEX idx_enrollments_trainee_id  ON enrollments (trainee_id);
