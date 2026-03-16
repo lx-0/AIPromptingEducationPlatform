@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import ReactMarkdown from "react-markdown";
 
 type RubricCriterion = {
@@ -29,6 +29,9 @@ type Submission = {
   prompt_text: string;
   llm_response: string | null;
   submitted_at: string;
+  total_score?: number | null;
+  max_score?: number | null;
+  feedback?: Score["feedback"] | null;
 };
 
 type Exercise = {
@@ -43,13 +46,59 @@ type Props = {
   workshopId: string;
 };
 
+function pct(score: number, max: number) {
+  return max > 0 ? Math.round((score / max) * 100) : 0;
+}
+
+function ScoreBadge({ score, max }: { score: number; max: number }) {
+  const p = pct(score, max);
+  const color =
+    p >= 80
+      ? "bg-green-50 text-green-700"
+      : p >= 50
+      ? "bg-yellow-50 text-yellow-700"
+      : "bg-red-50 text-red-700";
+  return (
+    <span className={`rounded px-2 py-0.5 text-xs font-semibold ${color}`}>
+      {score}/{max} pts
+    </span>
+  );
+}
+
 export default function ExerciseClient({ exercise, workshopId }: Props) {
   const [prompt, setPrompt] = useState("");
-  const [submission, setSubmission] = useState<Submission | null>(null);
-  const [score, setScore] = useState<Score | null>(null);
+  const [currentSubmission, setCurrentSubmission] = useState<Submission | null>(null);
+  const [currentScore, setCurrentScore] = useState<Score | null>(null);
   const [loading, setLoading] = useState(false);
   const [streaming, setStreaming] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [history, setHistory] = useState<Submission[]>([]);
+  const [historyLoading, setHistoryLoading] = useState(true);
+  const formRef = useRef<HTMLElement>(null);
+
+  // Load attempt history on mount
+  useEffect(() => {
+    async function loadHistory() {
+      try {
+        const res = await fetch(`/api/exercises/${exercise.id}/submissions`);
+        if (res.ok) {
+          const data: Submission[] = await res.json();
+          setHistory(data);
+        }
+      } finally {
+        setHistoryLoading(false);
+      }
+    }
+    loadHistory();
+  }, [exercise.id]);
+
+  const bestAttempt = history.length > 0
+    ? history.reduce((best, s) => {
+        if (s.total_score == null) return best;
+        if (best == null || best.total_score == null) return s;
+        return s.total_score > best.total_score ? s : best;
+      }, null as Submission | null)
+    : null;
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -57,8 +106,8 @@ export default function ExerciseClient({ exercise, workshopId }: Props) {
 
     setLoading(true);
     setError(null);
-    setSubmission(null);
-    setScore(null);
+    setCurrentSubmission(null);
+    setCurrentScore(null);
     setStreaming("");
 
     try {
@@ -78,6 +127,7 @@ export default function ExerciseClient({ exercise, workshopId }: Props) {
       const decoder = new TextDecoder();
       let accumulated = "";
       let submissionId: string | null = null;
+      let finalScore: Score | null = null;
 
       while (true) {
         const { done, value } = await reader.read();
@@ -106,7 +156,8 @@ export default function ExerciseClient({ exercise, workshopId }: Props) {
           if (parsed.done) {
             submissionId = parsed.submissionId ?? null;
             if (parsed.score) {
-              setScore(parsed.score);
+              finalScore = parsed.score;
+              setCurrentScore(parsed.score);
             }
           }
           if (parsed.error) {
@@ -115,18 +166,35 @@ export default function ExerciseClient({ exercise, workshopId }: Props) {
         }
       }
 
-      setSubmission({
+      const newSubmission: Submission = {
         id: submissionId ?? "",
         prompt_text: prompt.trim(),
         llm_response: accumulated || null,
         submitted_at: new Date().toISOString(),
-      });
+        total_score: finalScore?.total_score ?? null,
+        max_score: finalScore?.max_score ?? null,
+        feedback: finalScore?.feedback ?? null,
+      };
+
+      setCurrentSubmission(newSubmission);
       setStreaming("");
+
+      // Prepend to history
+      setHistory((prev) => [newSubmission, ...prev]);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unexpected error");
     } finally {
       setLoading(false);
     }
+  }
+
+  function handleTryAgain() {
+    setCurrentSubmission(null);
+    setCurrentScore(null);
+    setStreaming("");
+    setError(null);
+    setPrompt("");
+    formRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 
   return (
@@ -161,8 +229,27 @@ export default function ExerciseClient({ exercise, workshopId }: Props) {
         </section>
       )}
 
+      {/* Best score banner (shown when history exists) */}
+      {bestAttempt && bestAttempt.total_score != null && bestAttempt.max_score != null && (
+        <div className="rounded-xl border border-green-200 bg-green-50 px-6 py-4 flex items-center justify-between">
+          <div>
+            <p className="text-xs font-semibold text-green-700 uppercase tracking-wide mb-0.5">Best score</p>
+            <div className="flex items-baseline gap-1">
+              <span className="text-2xl font-bold text-green-800">{bestAttempt.total_score}</span>
+              <span className="text-green-600 text-sm">/ {bestAttempt.max_score}</span>
+              <span className="ml-1 text-sm text-green-600">
+                ({pct(bestAttempt.total_score, bestAttempt.max_score)}%)
+              </span>
+            </div>
+          </div>
+          <span className="text-xs text-green-600">
+            {history.length} attempt{history.length !== 1 ? "s" : ""}
+          </span>
+        </div>
+      )}
+
       {/* Prompt submission */}
-      <section className="rounded-xl border border-gray-200 bg-white p-6">
+      <section ref={formRef} className="rounded-xl border border-gray-200 bg-white p-6">
         <h2 className="text-base font-semibold text-gray-900 mb-4">Your prompt</h2>
         <form onSubmit={handleSubmit} className="space-y-4">
           <textarea
@@ -181,13 +268,13 @@ export default function ExerciseClient({ exercise, workshopId }: Props) {
             disabled={loading || !prompt.trim()}
             className="rounded-lg bg-blue-600 px-6 py-2.5 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
-            {loading ? "Running…" : "Submit prompt"}
+            {loading ? "Running…" : history.length > 0 ? "Submit attempt" : "Submit prompt"}
           </button>
         </form>
       </section>
 
       {/* Streaming response display */}
-      {(streaming || submission) && (
+      {(streaming || currentSubmission) && (
         <section className="rounded-xl border border-gray-200 bg-white p-6">
           <h2 className="text-base font-semibold text-gray-900 mb-4">
             Response
@@ -198,23 +285,23 @@ export default function ExerciseClient({ exercise, workshopId }: Props) {
             )}
           </h2>
           <div className="rounded-lg bg-gray-50 p-4 text-sm text-gray-800 whitespace-pre-wrap font-mono min-h-[4rem]">
-            {streaming || submission?.llm_response || ""}
+            {streaming || currentSubmission?.llm_response || ""}
             {loading && <span className="inline-block w-1.5 h-4 bg-blue-400 animate-pulse ml-0.5 align-middle" />}
           </div>
         </section>
       )}
 
       {/* Score / feedback display */}
-      {submission && score && (
+      {currentSubmission && currentScore && (
         <section className="rounded-xl border border-gray-200 bg-white p-6">
           <h2 className="text-base font-semibold text-gray-900 mb-2">Score</h2>
           <div className="flex items-baseline gap-1 mb-4">
-            <span className="text-3xl font-bold text-gray-900">{score.total_score}</span>
-            <span className="text-gray-500 text-lg">/ {score.max_score}</span>
+            <span className="text-3xl font-bold text-gray-900">{currentScore.total_score}</span>
+            <span className="text-gray-500 text-lg">/ {currentScore.max_score}</span>
           </div>
-          {score.feedback.criteria && score.feedback.criteria.length > 0 && (
+          {currentScore.feedback.criteria && currentScore.feedback.criteria.length > 0 && (
             <ul className="space-y-2 mb-4">
-              {score.feedback.criteria.map((c, i) => (
+              {currentScore.feedback.criteria.map((c, i) => (
                 <li key={i} className="flex items-start gap-3 text-sm">
                   <span className="rounded bg-green-50 px-2 py-0.5 text-xs font-semibold text-green-700 shrink-0">
                     {c.score} pts
@@ -227,11 +314,58 @@ export default function ExerciseClient({ exercise, workshopId }: Props) {
               ))}
             </ul>
           )}
-          {score.feedback.overall && (
+          {currentScore.feedback.overall && (
             <p className="text-sm text-gray-700 border-t border-gray-100 pt-3">
-              {score.feedback.overall}
+              {currentScore.feedback.overall}
             </p>
           )}
+          <div className="mt-5 pt-4 border-t border-gray-100">
+            <button
+              onClick={handleTryAgain}
+              className="rounded-lg border border-blue-200 bg-blue-50 px-5 py-2 text-sm font-semibold text-blue-700 hover:bg-blue-100 transition-colors"
+            >
+              Try again
+            </button>
+          </div>
+        </section>
+      )}
+
+      {/* Attempt history */}
+      {!historyLoading && history.length > 1 && (
+        <section className="rounded-xl border border-gray-200 bg-white p-6">
+          <h2 className="text-base font-semibold text-gray-900 mb-4">
+            Attempt history
+            <span className="ml-2 text-xs font-normal text-gray-500">({history.length} attempts)</span>
+          </h2>
+          <ol className="space-y-3">
+            {history.map((s, i) => (
+              <li key={s.id} className="rounded-lg border border-gray-100 bg-gray-50 p-4">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-xs font-semibold text-gray-500">
+                    Attempt #{history.length - i}
+                  </span>
+                  <div className="flex items-center gap-2">
+                    {s.total_score != null && s.max_score != null ? (
+                      <ScoreBadge score={s.total_score} max={s.max_score} />
+                    ) : (
+                      <span className="text-xs text-gray-400">no score</span>
+                    )}
+                    <span className="text-xs text-gray-400">
+                      {new Date(s.submitted_at).toLocaleString()}
+                    </span>
+                  </div>
+                </div>
+                <p className="text-xs text-gray-700 font-mono whitespace-pre-wrap line-clamp-3">
+                  {s.prompt_text}
+                </p>
+                {s.feedback?.overall && (
+                  <p className="mt-2 text-xs text-gray-500 italic border-t border-gray-200 pt-2">
+                    {s.feedback.overall}
+                  </p>
+                )}
+              </li>
+            ))}
+          </ol>
         </section>
       )}
 
