@@ -1,6 +1,7 @@
 import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
-import { createClient } from "@/lib/supabase/server";
+import { getSession } from "@/lib/session";
+import pool from "@/lib/db";
 
 type Exercise = {
   id: string;
@@ -21,31 +22,27 @@ export default async function WorkshopDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const supabase = await createClient();
+  const session = await getSession();
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
+  if (!session.userId) {
     redirect("/auth/sign-in");
   }
 
-  const { data: workshop, error: workshopError } = await supabase
-    .from("workshops")
-    .select("id, title, description, status")
-    .eq("id", id)
-    .single();
+  const workshopResult = await pool.query<Workshop>(
+    "SELECT id, title, description, status FROM workshops WHERE id = $1",
+    [id]
+  );
+  const workshop = workshopResult.rows[0];
 
-  if (workshopError || !workshop) {
+  if (!workshop) {
     notFound();
   }
 
-  const { data: exercises } = await supabase
-    .from("exercises")
-    .select("id, title, sort_order")
-    .eq("workshop_id", id)
-    .order("sort_order", { ascending: true });
+  const exercisesResult = await pool.query<Exercise>(
+    "SELECT id, title, sort_order FROM exercises WHERE workshop_id = $1 ORDER BY sort_order ASC",
+    [id]
+  );
+  const exercises = exercisesResult.rows;
 
   return (
     <main className="min-h-screen bg-gray-50">
@@ -69,21 +66,21 @@ export default async function WorkshopDetailPage({
           </Link>
         </div>
 
-        <h1 className="text-2xl font-bold text-gray-900">{(workshop as Workshop).title}</h1>
-        {(workshop as Workshop).description && (
-          <p className="mt-2 text-sm text-gray-600">{(workshop as Workshop).description}</p>
+        <h1 className="text-2xl font-bold text-gray-900">{workshop.title}</h1>
+        {workshop.description && (
+          <p className="mt-2 text-sm text-gray-600">{workshop.description}</p>
         )}
 
         <div className="mt-8">
           <h2 className="text-lg font-semibold text-gray-900 mb-4">Exercises</h2>
 
-          {!exercises || exercises.length === 0 ? (
+          {exercises.length === 0 ? (
             <div className="rounded-xl border border-gray-200 bg-white p-6 text-center text-gray-500">
               <p className="text-sm">No exercises in this workshop yet.</p>
             </div>
           ) : (
             <ol className="space-y-3">
-              {(exercises as Exercise[]).map((exercise, index) => (
+              {exercises.map((exercise, index) => (
                 <li key={exercise.id}>
                   <Link
                     href={`/workshops/${id}/exercises/${exercise.id}`}

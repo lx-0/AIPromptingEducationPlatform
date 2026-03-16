@@ -1,13 +1,11 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import pool from "@/lib/db";
+import { getSession } from "@/lib/session";
 
 export async function POST(request: Request) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const session = await getSession();
 
-  if (!user) {
+  if (!session.userId) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -22,29 +20,20 @@ export async function POST(request: Request) {
   }
 
   // Verify exercise exists
-  const { data: exercise, error: exerciseError } = await supabase
-    .from("exercises")
-    .select("id")
-    .eq("id", exercise_id)
-    .single();
+  const exerciseResult = await pool.query(
+    "SELECT id FROM exercises WHERE id = $1",
+    [exercise_id]
+  );
 
-  if (exerciseError || !exercise) {
+  if (exerciseResult.rows.length === 0) {
     return NextResponse.json({ error: "Exercise not found" }, { status: 404 });
   }
 
-  const { data, error } = await supabase
-    .from("submissions")
-    .insert({
-      exercise_id,
-      trainee_id: user.id,
-      prompt_text,
-    })
-    .select()
-    .single();
+  const result = await pool.query(
+    `INSERT INTO submissions (exercise_id, trainee_id, prompt_text)
+     VALUES ($1, $2, $3) RETURNING *`,
+    [exercise_id, session.userId, prompt_text]
+  );
 
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
-  }
-
-  return NextResponse.json(data, { status: 201 });
+  return NextResponse.json(result.rows[0], { status: 201 });
 }

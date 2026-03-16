@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { createClient } from "@/lib/supabase/server";
+import { getSession } from "@/lib/session";
+import pool from "@/lib/db";
 
 type Workshop = {
   id: string;
@@ -11,21 +12,16 @@ type Workshop = {
 };
 
 export default async function WorkshopsPage() {
-  const supabase = await createClient();
+  const session = await getSession();
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
+  if (!session.userId) {
     redirect("/auth/sign-in");
   }
 
-  const { data: workshops } = await supabase
-    .from("workshops")
-    .select("id, title, description, status, created_at")
-    .eq("status", "published")
-    .order("created_at", { ascending: false });
+  const result = await pool.query<Workshop>(
+    "SELECT id, title, description, status, created_at FROM workshops WHERE status = 'published' ORDER BY created_at DESC"
+  );
+  const workshops = result.rows;
 
   return (
     <main className="min-h-screen bg-gray-50">
@@ -46,13 +42,13 @@ export default async function WorkshopsPage() {
         <h1 className="text-2xl font-bold text-gray-900">Workshops</h1>
         <p className="mt-1 text-sm text-gray-500">Browse available workshops and start practising.</p>
 
-        {!workshops || workshops.length === 0 ? (
+        {workshops.length === 0 ? (
           <div className="mt-8 rounded-xl border border-gray-200 bg-white p-6 text-center text-gray-500">
             <p className="text-sm">No published workshops yet. Check back soon.</p>
           </div>
         ) : (
           <ul className="mt-8 space-y-4">
-            {(workshops as Workshop[]).map((workshop) => (
+            {workshops.map((workshop) => (
               <li key={workshop.id}>
                 <Link
                   href={`/workshops/${workshop.id}`}

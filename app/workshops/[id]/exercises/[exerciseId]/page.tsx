@@ -1,6 +1,7 @@
 import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
-import { createClient } from "@/lib/supabase/server";
+import { getSession } from "@/lib/session";
+import pool from "@/lib/db";
 import ExerciseClient from "./ExerciseClient";
 
 type Exercise = {
@@ -17,24 +18,19 @@ export default async function ExercisePage({
   params: Promise<{ id: string; exerciseId: string }>;
 }) {
   const { id, exerciseId } = await params;
-  const supabase = await createClient();
+  const session = await getSession();
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
+  if (!session.userId) {
     redirect("/auth/sign-in");
   }
 
-  const { data: exercise, error } = await supabase
-    .from("exercises")
-    .select("id, title, instructions, rubric, workshop_id")
-    .eq("id", exerciseId)
-    .eq("workshop_id", id)
-    .single();
+  const result = await pool.query<Exercise>(
+    "SELECT id, title, instructions, rubric, workshop_id FROM exercises WHERE id = $1 AND workshop_id = $2",
+    [exerciseId, id]
+  );
+  const exercise = result.rows[0];
 
-  if (error || !exercise) {
+  if (!exercise) {
     notFound();
   }
 
@@ -61,10 +57,10 @@ export default async function ExercisePage({
         </div>
 
         <h1 className="text-2xl font-bold text-gray-900 mb-8">
-          {(exercise as Exercise).title}
+          {exercise.title}
         </h1>
 
-        <ExerciseClient exercise={exercise as Exercise} workshopId={id} />
+        <ExerciseClient exercise={exercise} workshopId={id} />
       </div>
     </main>
   );

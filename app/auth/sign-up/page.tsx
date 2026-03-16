@@ -3,8 +3,6 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { createClient } from "@/lib/supabase/client";
-
 type Role = "instructor" | "trainee";
 
 export default function SignUpPage() {
@@ -22,20 +20,15 @@ export default function SignUpPage() {
     setError(null);
     setLoading(true);
 
-    const supabase = createClient();
-    const { error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        data: {
-          display_name: displayName,
-          role,
-        },
-      },
+    const res = await fetch("/api/auth/sign-up", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, password, displayName, role }),
     });
 
-    if (error) {
-      setError(error.message);
+    if (!res.ok) {
+      const body = await res.json();
+      setError(body.error ?? "Sign up failed");
       setLoading(false);
       return;
     }

@@ -1,31 +1,28 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import pool from "@/lib/db";
+import { getSession } from "@/lib/session";
 
 export async function GET(
   _request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const session = await getSession();
 
-  if (!user) {
+  if (!session.userId) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const { data, error } = await supabase
-    .from("workshops")
-    .select("*")
-    .eq("id", id)
-    .single();
+  const result = await pool.query(
+    "SELECT * FROM workshops WHERE id = $1",
+    [id]
+  );
 
-  if (error) {
+  if (result.rows.length === 0) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 
-  return NextResponse.json(data);
+  return NextResponse.json(result.rows[0]);
 }
 
 export async function PATCH(
@@ -33,32 +30,41 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const session = await getSession();
 
-  if (!user) {
+  if (!session.userId) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   const body = await request.json();
   const { title, description } = body;
 
-  const updates: Record<string, unknown> = {};
-  if (title !== undefined) updates.title = title;
-  if (description !== undefined) updates.description = description;
+  const setClauses: string[] = [];
+  const values: unknown[] = [];
+  let paramIdx = 1;
 
-  const { data, error } = await supabase
-    .from("workshops")
-    .update(updates)
-    .eq("id", id)
-    .select()
-    .single();
-
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  if (title !== undefined) {
+    setClauses.push(`title = $${paramIdx++}`);
+    values.push(title);
+  }
+  if (description !== undefined) {
+    setClauses.push(`description = $${paramIdx++}`);
+    values.push(description);
   }
 
-  return NextResponse.json(data);
+  if (setClauses.length === 0) {
+    return NextResponse.json({ error: "No fields to update" }, { status: 400 });
+  }
+
+  values.push(id);
+  const result = await pool.query(
+    `UPDATE workshops SET ${setClauses.join(", ")} WHERE id = $${paramIdx} RETURNING *`,
+    values
+  );
+
+  if (result.rows.length === 0) {
+    return NextResponse.json({ error: "Not found" }, { status: 404 });
+  }
+
+  return NextResponse.json(result.rows[0]);
 }

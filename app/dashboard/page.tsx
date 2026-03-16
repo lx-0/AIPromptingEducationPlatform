@@ -1,22 +1,12 @@
 import { redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
+import { getSession } from "@/lib/session";
 
 export default async function DashboardPage() {
-  const supabase = await createClient();
+  const session = await getSession();
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
+  if (!session.userId) {
     redirect("/auth/sign-in");
   }
-
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("display_name, role")
-    .eq("id", user.id)
-    .single();
 
   return (
     <main className="min-h-screen bg-gray-50">
@@ -38,12 +28,11 @@ export default async function DashboardPage() {
 
       <div className="mx-auto max-w-5xl px-4 py-10">
         <h1 className="text-2xl font-bold text-gray-900">
-          Welcome,{" "}
-          {profile?.display_name ?? user.email}
+          Welcome, {session.displayName ?? session.email}
         </h1>
-        {profile?.role && (
+        {session.role && (
           <p className="mt-1 text-sm capitalize text-gray-500">
-            Role: {profile.role}
+            Role: {session.role}
           </p>
         )}
 

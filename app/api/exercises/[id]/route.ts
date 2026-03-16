@@ -1,31 +1,28 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import pool from "@/lib/db";
+import { getSession } from "@/lib/session";
 
 export async function GET(
   _request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const session = await getSession();
 
-  if (!user) {
+  if (!session.userId) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const { data, error } = await supabase
-    .from("exercises")
-    .select("*")
-    .eq("id", id)
-    .single();
+  const result = await pool.query(
+    "SELECT * FROM exercises WHERE id = $1",
+    [id]
+  );
 
-  if (error) {
+  if (result.rows.length === 0) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 
-  return NextResponse.json(data);
+  return NextResponse.json(result.rows[0]);
 }
 
 export async function PATCH(
@@ -33,38 +30,41 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const session = await getSession();
 
-  if (!user) {
+  if (!session.userId) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   const body = await request.json();
   const { title, instructions, system_prompt, model_config, rubric, sort_order } = body;
 
-  const updates: Record<string, unknown> = {};
-  if (title !== undefined) updates.title = title;
-  if (instructions !== undefined) updates.instructions = instructions;
-  if (system_prompt !== undefined) updates.system_prompt = system_prompt;
-  if (model_config !== undefined) updates.model_config = model_config;
-  if (rubric !== undefined) updates.rubric = rubric;
-  if (sort_order !== undefined) updates.sort_order = sort_order;
+  const setClauses: string[] = [];
+  const values: unknown[] = [];
+  let paramIdx = 1;
 
-  const { data, error } = await supabase
-    .from("exercises")
-    .update(updates)
-    .eq("id", id)
-    .select()
-    .single();
+  if (title !== undefined) { setClauses.push(`title = $${paramIdx++}`); values.push(title); }
+  if (instructions !== undefined) { setClauses.push(`instructions = $${paramIdx++}`); values.push(instructions); }
+  if (system_prompt !== undefined) { setClauses.push(`system_prompt = $${paramIdx++}`); values.push(system_prompt); }
+  if (model_config !== undefined) { setClauses.push(`model_config = $${paramIdx++}`); values.push(JSON.stringify(model_config)); }
+  if (rubric !== undefined) { setClauses.push(`rubric = $${paramIdx++}`); values.push(JSON.stringify(rubric)); }
+  if (sort_order !== undefined) { setClauses.push(`sort_order = $${paramIdx++}`); values.push(sort_order); }
 
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  if (setClauses.length === 0) {
+    return NextResponse.json({ error: "No fields to update" }, { status: 400 });
   }
 
-  return NextResponse.json(data);
+  values.push(id);
+  const result = await pool.query(
+    `UPDATE exercises SET ${setClauses.join(", ")} WHERE id = $${paramIdx} RETURNING *`,
+    values
+  );
+
+  if (result.rows.length === 0) {
+    return NextResponse.json({ error: "Not found" }, { status: 404 });
+  }
+
+  return NextResponse.json(result.rows[0]);
 }
 
 export async function DELETE(
@@ -72,20 +72,13 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const session = await getSession();
 
-  if (!user) {
+  if (!session.userId) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const { error } = await supabase.from("exercises").delete().eq("id", id);
-
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
-  }
+  await pool.query("DELETE FROM exercises WHERE id = $1", [id]);
 
   return new NextResponse(null, { status: 204 });
 }

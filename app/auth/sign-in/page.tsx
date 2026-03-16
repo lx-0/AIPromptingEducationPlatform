@@ -3,8 +3,6 @@
 import { Suspense, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { createClient } from "@/lib/supabase/client";
-
 function SignInForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -20,11 +18,15 @@ function SignInForm() {
     setError(null);
     setLoading(true);
 
-    const supabase = createClient();
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    const res = await fetch("/api/auth/sign-in", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, password }),
+    });
 
-    if (error) {
-      setError(error.message);
+    if (!res.ok) {
+      const body = await res.json();
+      setError(body.error ?? "Sign in failed");
       setLoading(false);
       return;
     }

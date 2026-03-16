@@ -1,31 +1,24 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import pool from "@/lib/db";
+import { getSession } from "@/lib/session";
 
 export async function GET(
   _request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const session = await getSession();
 
-  if (!user) {
+  if (!session.userId) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const { data, error } = await supabase
-    .from("exercises")
-    .select("*")
-    .eq("workshop_id", id)
-    .order("sort_order", { ascending: true });
+  const result = await pool.query(
+    "SELECT * FROM exercises WHERE workshop_id = $1 ORDER BY sort_order ASC",
+    [id]
+  );
 
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
-  }
-
-  return NextResponse.json(data);
+  return NextResponse.json(result.rows);
 }
 
 export async function POST(
@@ -33,12 +26,9 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const session = await getSession();
 
-  if (!user) {
+  if (!session.userId) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -52,23 +42,19 @@ export async function POST(
     );
   }
 
-  const { data, error } = await supabase
-    .from("exercises")
-    .insert({
-      workshop_id: id,
+  const result = await pool.query(
+    `INSERT INTO exercises (workshop_id, title, instructions, system_prompt, model_config, rubric, sort_order)
+     VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *`,
+    [
+      id,
       title,
       instructions,
-      system_prompt: system_prompt ?? null,
-      model_config: model_config ?? {},
-      rubric: rubric ?? [],
-      sort_order: sort_order ?? 0,
-    })
-    .select()
-    .single();
+      system_prompt ?? null,
+      JSON.stringify(model_config ?? {}),
+      JSON.stringify(rubric ?? []),
+      sort_order ?? 0,
+    ]
+  );
 
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
-  }
-
-  return NextResponse.json(data, { status: 201 });
+  return NextResponse.json(result.rows[0], { status: 201 });
 }
