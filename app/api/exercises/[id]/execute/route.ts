@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
 import pool from "@/lib/db";
 import { getSession } from "@/lib/session";
+import { scoreSubmission } from "@/lib/scorer";
 
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
@@ -139,10 +140,18 @@ export async function POST(
           [fullResponse, submissionId]
         );
 
-        // Send final message with submission id
+        // Run AI judge scoring
+        let score = null;
+        try {
+          score = await scoreSubmission(submissionId);
+        } catch {
+          // Scoring failure is non-fatal; client can retry via POST /api/submissions/[id]/score
+        }
+
+        // Send final message with submission id and score
         controller.enqueue(
           encoder.encode(
-            `data: ${JSON.stringify({ done: true, submissionId })}\n\n`
+            `data: ${JSON.stringify({ done: true, submissionId, score })}\n\n`
           )
         );
       } catch (err) {

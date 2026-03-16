@@ -96,6 +96,7 @@ export default function ExerciseClient({ exercise, workshopId }: Props) {
             done?: boolean;
             error?: string;
             submissionId?: string;
+            score?: Score;
           };
 
           if (parsed.text) {
@@ -104,6 +105,9 @@ export default function ExerciseClient({ exercise, workshopId }: Props) {
           }
           if (parsed.done) {
             submissionId = parsed.submissionId ?? null;
+            if (parsed.score) {
+              setScore(parsed.score);
+            }
           }
           if (parsed.error) {
             throw new Error(parsed.error);
