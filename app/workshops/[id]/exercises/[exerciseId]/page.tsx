@@ -10,6 +10,7 @@ type Exercise = {
   instructions: string;
   rubric: { criterion: string; max_points: number; description?: string }[];
   workshop_id: string;
+  instructor_id: string;
 };
 
 export default async function ExercisePage({
@@ -25,7 +26,10 @@ export default async function ExercisePage({
   }
 
   const result = await pool.query<Exercise>(
-    "SELECT id, title, instructions, rubric, workshop_id FROM exercises WHERE id = $1 AND workshop_id = $2",
+    `SELECT e.id, e.title, e.instructions, e.rubric, e.workshop_id, w.instructor_id
+     FROM exercises e
+     JOIN workshops w ON w.id = e.workshop_id
+     WHERE e.id = $1 AND e.workshop_id = $2`,
     [exerciseId, id]
   );
   const exercise = result.rows[0];
@@ -33,6 +37,10 @@ export default async function ExercisePage({
   if (!exercise) {
     notFound();
   }
+
+  const isOwner =
+    session.role === "instructor" &&
+    exercise.instructor_id === session.userId;
 
   return (
     <main className="min-h-screen bg-gray-50">
@@ -56,9 +64,19 @@ export default async function ExercisePage({
           <Link href={`/workshops/${id}`} className="hover:underline">Workshop</Link>
         </div>
 
-        <h1 className="text-2xl font-bold text-gray-900 mb-8">
-          {exercise.title}
-        </h1>
+        <div className="mb-8 flex items-start justify-between gap-4">
+          <h1 className="text-2xl font-bold text-gray-900">
+            {exercise.title}
+          </h1>
+          {isOwner && (
+            <Link
+              href={`/workshops/${id}/exercises/${exerciseId}/edit`}
+              className="shrink-0 rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:border-blue-300 hover:text-blue-700 transition-colors"
+            >
+              Edit exercise
+            </Link>
+          )}
+        </div>
 
         <ExerciseClient exercise={exercise} workshopId={id} />
       </div>

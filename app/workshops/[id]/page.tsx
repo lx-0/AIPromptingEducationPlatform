@@ -212,26 +212,54 @@ export default async function WorkshopDetailPage({
         )}
 
         <div className="mt-8">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Exercises</h2>
+          <div className="mb-4 flex items-center justify-between">
+            <h2 className="text-lg font-semibold text-gray-900">Exercises</h2>
+            {isOwner && (
+              <Link
+                href={`/workshops/${id}/exercises/new`}
+                className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 transition-colors"
+              >
+                + Add exercise
+              </Link>
+            )}
+          </div>
 
           {exercises.length === 0 ? (
             <div className="rounded-xl border border-gray-200 bg-white p-6 text-center text-gray-500">
               <p className="text-sm">No exercises in this workshop yet.</p>
+              {isOwner && (
+                <Link
+                  href={`/workshops/${id}/exercises/new`}
+                  className="mt-3 inline-block text-sm text-blue-600 hover:underline"
+                >
+                  Add the first exercise →
+                </Link>
+              )}
             </div>
           ) : (
             <ol className="space-y-3">
               {exercises.map((exercise, index) => (
                 <li key={exercise.id}>
-                  <Link
-                    href={`/workshops/${id}/exercises/${exercise.id}`}
-                    className="flex items-center gap-4 rounded-xl border border-gray-200 bg-white px-6 py-4 hover:border-blue-300 hover:shadow-sm transition-all"
-                  >
-                    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-blue-50 text-sm font-semibold text-blue-700">
-                      {index + 1}
-                    </span>
-                    <span className="text-gray-900 font-medium">{exercise.title}</span>
-                    <span className="ml-auto text-xs text-blue-600">Start →</span>
-                  </Link>
+                  <div className="flex items-center gap-2">
+                    <Link
+                      href={`/workshops/${id}/exercises/${exercise.id}`}
+                      className="flex flex-1 items-center gap-4 rounded-xl border border-gray-200 bg-white px-6 py-4 hover:border-blue-300 hover:shadow-sm transition-all"
+                    >
+                      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-blue-50 text-sm font-semibold text-blue-700">
+                        {index + 1}
+                      </span>
+                      <span className="text-gray-900 font-medium">{exercise.title}</span>
+                      <span className="ml-auto text-xs text-blue-600">Start →</span>
+                    </Link>
+                    {isOwner && (
+                      <Link
+                        href={`/workshops/${id}/exercises/${exercise.id}/edit`}
+                        className="shrink-0 rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs font-medium text-gray-600 hover:border-blue-300 hover:text-blue-700 transition-colors"
+                      >
+                        Edit
+                      </Link>
+                    )}
+                  </div>
                 </li>
               ))}
             </ol>
