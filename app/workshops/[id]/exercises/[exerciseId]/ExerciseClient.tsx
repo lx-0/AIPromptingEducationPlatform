@@ -65,6 +65,48 @@ function ScoreBadge({ score, max }: { score: number; max: number }) {
   );
 }
 
+function CriterionBar({
+  criterion,
+  score,
+  maxPoints,
+  comment,
+}: {
+  criterion: string;
+  score: number;
+  maxPoints: number;
+  comment?: string;
+}) {
+  const p = pct(score, maxPoints);
+  const barColor =
+    p >= 80 ? "bg-green-500" : p >= 50 ? "bg-yellow-400" : "bg-red-400";
+  return (
+    <li className="py-3 first:pt-0 last:pb-0">
+      <div className="flex items-baseline justify-between mb-1.5 gap-3">
+        <p className="text-sm font-medium text-gray-900">{criterion}</p>
+        <span className="text-sm font-semibold text-gray-600 shrink-0">
+          {score}&thinsp;/&thinsp;{maxPoints} pts
+        </span>
+      </div>
+      <div
+        className="h-2 w-full rounded-full bg-gray-100 overflow-hidden mb-1.5"
+        role="progressbar"
+        aria-valuenow={score}
+        aria-valuemin={0}
+        aria-valuemax={maxPoints}
+        aria-label={`${criterion}: ${score} of ${maxPoints} points`}
+      >
+        <div
+          className={`h-full rounded-full ${barColor} transition-[width] duration-500`}
+          style={{ width: `${p}%` }}
+        />
+      </div>
+      {comment && (
+        <p className="text-sm text-gray-600 leading-relaxed">{comment}</p>
+      )}
+    </li>
+  );
+}
+
 function LoadingSpinner({ className }: { className?: string }) {
   return (
     <svg
@@ -366,30 +408,47 @@ export default function ExerciseClient({ exercise, workshopId }: Props) {
             </span>
             <span className="text-sm font-semibold text-green-700">Scored successfully</span>
           </div>
-          <h2 className="text-base font-semibold text-gray-900 mb-2">Score</h2>
-          <div className="flex items-baseline gap-1 mb-4">
+          <h2 className="text-base font-semibold text-gray-900 mb-2">Your score</h2>
+          <div className="flex items-baseline gap-1 mb-5">
             <span className="text-3xl font-bold text-gray-900">{currentScore.total_score}</span>
-            <span className="text-gray-500 text-lg">/ {currentScore.max_score}</span>
+            <span className="text-gray-500 text-lg">/ {currentScore.max_score} pts</span>
+            <span className="ml-2 text-sm text-gray-500">
+              ({pct(currentScore.total_score, currentScore.max_score)}%)
+            </span>
           </div>
           {currentScore.feedback.criteria && currentScore.feedback.criteria.length > 0 && (
-            <ul className="space-y-2 mb-4">
-              {currentScore.feedback.criteria.map((c, i) => (
-                <li key={i} className="flex items-start gap-3 text-sm">
-                  <span className="rounded bg-green-50 px-2 py-0.5 text-xs font-semibold text-green-700 shrink-0">
-                    {c.score} pts
-                  </span>
-                  <div>
-                    <p className="font-medium text-gray-900">{c.criterion}</p>
-                    {c.comment && <p className="text-gray-600 text-xs mt-0.5">{c.comment}</p>}
-                  </div>
-                </li>
-              ))}
-            </ul>
+            <div className="mb-5">
+              <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">
+                Breakdown by criterion
+              </h3>
+              <ul className="divide-y divide-gray-100 rounded-lg border border-gray-100 bg-gray-50 px-4">
+                {currentScore.feedback.criteria.map((c, i) => {
+                  const rubricEntry = exercise.rubric.find(
+                    (r) => r.criterion === c.criterion
+                  );
+                  const maxPoints = rubricEntry?.max_points ?? currentScore.max_score;
+                  return (
+                    <CriterionBar
+                      key={i}
+                      criterion={c.criterion}
+                      score={c.score}
+                      maxPoints={maxPoints}
+                      comment={c.comment}
+                    />
+                  );
+                })}
+              </ul>
+            </div>
           )}
           {currentScore.feedback.overall && (
-            <p className="text-sm text-gray-700 border-t border-gray-100 pt-3">
-              {currentScore.feedback.overall}
-            </p>
+            <div className="rounded-lg border border-gray-100 bg-gray-50 px-4 py-3">
+              <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">
+                Overall feedback
+              </h3>
+              <p className="text-sm text-gray-700 leading-relaxed">
+                {currentScore.feedback.overall}
+              </p>
+            </div>
           )}
           <div className="mt-5 pt-4 border-t border-gray-100">
             <button
