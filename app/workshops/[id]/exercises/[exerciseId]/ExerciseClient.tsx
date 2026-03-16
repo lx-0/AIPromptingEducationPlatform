@@ -48,6 +48,7 @@ export default function ExerciseClient({ exercise, workshopId }: Props) {
   const [submission, setSubmission] = useState<Submission | null>(null);
   const [score, setScore] = useState<Score | null>(null);
   const [loading, setLoading] = useState(false);
+  const [streaming, setStreaming] = useState("");
   const [error, setError] = useState<string | null>(null);
 
   async function handleSubmit(e: React.FormEvent) {
@@ -58,24 +59,65 @@ export default function ExerciseClient({ exercise, workshopId }: Props) {
     setError(null);
     setSubmission(null);
     setScore(null);
+    setStreaming("");
 
     try {
-      const res = await fetch("/api/submissions", {
+      const res = await fetch(`/api/exercises/${exercise.id}/execute`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          exercise_id: exercise.id,
-          prompt_text: prompt.trim(),
-        }),
+        body: JSON.stringify({ prompt_text: prompt.trim() }),
       });
 
       if (!res.ok) {
         const body = await res.json();
-        throw new Error(body.error ?? "Submission failed");
+        throw new Error(body.error ?? "Execution failed");
       }
 
-      const data: Submission = await res.json();
-      setSubmission(data);
+      // Stream SSE response
+      const reader = res.body!.getReader();
+      const decoder = new TextDecoder();
+      let accumulated = "";
+      let submissionId: string | null = null;
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        const chunk = decoder.decode(value, { stream: true });
+        const lines = chunk.split("\n");
+
+        for (const line of lines) {
+          if (!line.startsWith("data: ")) continue;
+          const json = line.slice(6);
+          if (!json.trim()) continue;
+
+          const parsed = JSON.parse(json) as {
+            text?: string;
+            done?: boolean;
+            error?: string;
+            submissionId?: string;
+          };
+
+          if (parsed.text) {
+            accumulated += parsed.text;
+            setStreaming(accumulated);
+          }
+          if (parsed.done) {
+            submissionId = parsed.submissionId ?? null;
+          }
+          if (parsed.error) {
+            throw new Error(parsed.error);
+          }
+        }
+      }
+
+      setSubmission({
+        id: submissionId ?? "",
+        prompt_text: prompt.trim(),
+        llm_response: accumulated || null,
+        submitted_at: new Date().toISOString(),
+      });
+      setStreaming("");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unexpected error");
     } finally {
@@ -135,27 +177,26 @@ export default function ExerciseClient({ exercise, workshopId }: Props) {
             disabled={loading || !prompt.trim()}
             className="rounded-lg bg-blue-600 px-6 py-2.5 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
-            {loading ? "Submitting…" : "Submit prompt"}
+            {loading ? "Running…" : "Submit prompt"}
           </button>
         </form>
       </section>
 
-      {/* Response display */}
-      {submission && (
+      {/* Streaming response display */}
+      {(streaming || submission) && (
         <section className="rounded-xl border border-gray-200 bg-white p-6">
-          <h2 className="text-base font-semibold text-gray-900 mb-4">Response</h2>
-          {submission.llm_response ? (
-            <div className="rounded-lg bg-gray-50 p-4 text-sm text-gray-800 whitespace-pre-wrap font-mono">
-              {submission.llm_response}
-            </div>
-          ) : (
-            <div className="rounded-lg border border-dashed border-gray-300 p-4 text-center text-sm text-gray-500">
-              <p>Your prompt has been submitted.</p>
-              <p className="mt-1 text-xs text-gray-400">
-                The execution pipeline will process it shortly. Reload the page to check for results.
-              </p>
-            </div>
-          )}
+          <h2 className="text-base font-semibold text-gray-900 mb-4">
+            Response
+            {loading && (
+              <span className="ml-2 text-xs font-normal text-blue-500 animate-pulse">
+                streaming…
+              </span>
+            )}
+          </h2>
+          <div className="rounded-lg bg-gray-50 p-4 text-sm text-gray-800 whitespace-pre-wrap font-mono min-h-[4rem]">
+            {streaming || submission?.llm_response || ""}
+            {loading && <span className="inline-block w-1.5 h-4 bg-blue-400 animate-pulse ml-0.5 align-middle" />}
+          </div>
         </section>
       )}
 
