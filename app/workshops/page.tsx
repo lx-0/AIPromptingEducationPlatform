@@ -2,14 +2,7 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { getSession } from "@/lib/session";
 import pool from "@/lib/db";
-
-type Workshop = {
-  id: string;
-  title: string;
-  description: string | null;
-  status: string;
-  created_at: string;
-};
+import WorkshopDiscovery, { WorkshopSummary } from "./WorkshopDiscovery";
 
 export default async function WorkshopsPage() {
   const session = await getSession();
@@ -18,10 +11,28 @@ export default async function WorkshopsPage() {
     redirect("/auth/sign-in");
   }
 
-  const result = await pool.query<Workshop>(
-    "SELECT id, title, description, status, created_at FROM workshops WHERE status = 'published' ORDER BY created_at DESC"
+  const result = await pool.query<WorkshopSummary>(
+    `SELECT
+       w.id,
+       w.title,
+       w.description,
+       w.created_at,
+       u.display_name AS instructor_name,
+       COUNT(DISTINCT e.id)::int AS exercise_count,
+       COUNT(DISTINCT en.trainee_id)::int AS enrollment_count,
+       EXISTS(
+         SELECT 1 FROM enrollments
+         WHERE workshop_id = w.id AND trainee_id = $1
+       ) AS is_enrolled
+     FROM workshops w
+     JOIN users u ON u.id = w.instructor_id
+     LEFT JOIN exercises e ON e.workshop_id = w.id
+     LEFT JOIN enrollments en ON en.workshop_id = w.id
+     WHERE w.status = 'published'
+     GROUP BY w.id, w.title, w.description, w.created_at, u.display_name
+     ORDER BY w.created_at DESC`,
+    [session.userId]
   );
-  const workshops = result.rows;
 
   return (
     <main className="min-h-screen bg-gray-50">
@@ -39,31 +50,18 @@ export default async function WorkshopsPage() {
       </nav>
 
       <div className="mx-auto max-w-5xl px-4 py-10">
-        <h1 className="text-2xl font-bold text-gray-900">Workshops</h1>
-        <p className="mt-1 text-sm text-gray-500">Browse available workshops and start practising.</p>
+        <div className="mb-2">
+          <Link href="/dashboard" className="text-sm text-blue-600 hover:underline">
+            ← Dashboard
+          </Link>
+        </div>
 
-        {workshops.length === 0 ? (
-          <div className="mt-8 rounded-xl border border-gray-200 bg-white p-6 text-center text-gray-500">
-            <p className="text-sm">No published workshops yet. Check back soon.</p>
-          </div>
-        ) : (
-          <ul className="mt-8 space-y-4">
-            {workshops.map((workshop) => (
-              <li key={workshop.id}>
-                <Link
-                  href={`/workshops/${workshop.id}`}
-                  className="block rounded-xl border border-gray-200 bg-white p-6 hover:border-blue-300 hover:shadow-sm transition-all"
-                >
-                  <h2 className="text-lg font-semibold text-gray-900">{workshop.title}</h2>
-                  {workshop.description && (
-                    <p className="mt-1 text-sm text-gray-600">{workshop.description}</p>
-                  )}
-                  <p className="mt-3 text-xs text-blue-600 font-medium">View exercises →</p>
-                </Link>
-              </li>
-            ))}
-          </ul>
-        )}
+        <h1 className="text-2xl font-bold text-gray-900">Browse Workshops</h1>
+        <p className="mt-1 text-sm text-gray-500">
+          Discover and enroll in published workshops to start practising.
+        </p>
+
+        <WorkshopDiscovery workshops={result.rows} />
       </div>
     </main>
   );
