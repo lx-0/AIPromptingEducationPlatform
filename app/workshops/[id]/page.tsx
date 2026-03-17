@@ -2,6 +2,7 @@ import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
 import { getSession } from "@/lib/session";
 import pool from "@/lib/db";
+import PublishPanel from "./PublishPanel";
 
 type Exercise = {
   id: string;
@@ -15,6 +16,7 @@ type Workshop = {
   description: string | null;
   status: string;
   instructor_id: string;
+  invite_code: string | null;
 };
 
 type WorkshopStats = {
@@ -46,7 +48,7 @@ export default async function WorkshopDetailPage({
   }
 
   const workshopResult = await pool.query<Workshop>(
-    "SELECT id, title, description, status, instructor_id FROM workshops WHERE id = $1",
+    "SELECT id, title, description, status, instructor_id, invite_code FROM workshops WHERE id = $1",
     [id]
   );
   const workshop = workshopResult.rows[0];
@@ -131,7 +133,10 @@ export default async function WorkshopDetailPage({
 
         <div className="flex items-start justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">{workshop.title}</h1>
+            <div className="flex items-center gap-3">
+              <h1 className="text-2xl font-bold text-gray-900">{workshop.title}</h1>
+              <WorkshopStatusBadge status={workshop.status} />
+            </div>
             {workshop.description && (
               <p className="mt-2 text-sm text-gray-600">{workshop.description}</p>
             )}
@@ -145,6 +150,16 @@ export default async function WorkshopDetailPage({
             </Link>
           )}
         </div>
+
+        {isOwner && (workshop.status === "draft" || workshop.status === "published") && (
+          <div className="mt-6">
+            <PublishPanel
+              workshopId={id}
+              status={workshop.status}
+              inviteCode={workshop.invite_code}
+            />
+          </div>
+        )}
 
         {isOwner && workshopStats && (
           <div className="mt-8">
@@ -267,5 +282,27 @@ export default async function WorkshopDetailPage({
         </div>
       </div>
     </main>
+  );
+}
+
+function WorkshopStatusBadge({ status }: { status: string }) {
+  if (status === "published") {
+    return (
+      <span className="inline-flex items-center rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-medium text-green-700">
+        Published
+      </span>
+    );
+  }
+  if (status === "archived") {
+    return (
+      <span className="inline-flex items-center rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-medium text-gray-600">
+        Archived
+      </span>
+    );
+  }
+  return (
+    <span className="inline-flex items-center rounded-full bg-yellow-100 px-2.5 py-0.5 text-xs font-medium text-yellow-700">
+      Draft
+    </span>
   );
 }

@@ -3,6 +3,16 @@ import Link from "next/link";
 import { getSession } from "@/lib/session";
 import pool from "@/lib/db";
 
+type InstructorWorkshop = {
+  id: string;
+  title: string;
+  description: string | null;
+  status: string;
+  exercise_count: string;
+  enrolled_count: string;
+  created_at: string;
+};
+
 type ExerciseProgress = {
   exercise_id: string;
   exercise_title: string;
@@ -32,6 +42,24 @@ export default async function DashboardPage() {
   }
 
   let workshopProgress: WorkshopProgress[] = [];
+  let instructorWorkshops: InstructorWorkshop[] = [];
+
+  if (session.role === "instructor") {
+    const result = await pool.query<InstructorWorkshop>(
+      `SELECT
+         w.id, w.title, w.description, w.status, w.created_at,
+         COUNT(DISTINCT e.id)::text AS exercise_count,
+         COUNT(DISTINCT en.trainee_id)::text AS enrolled_count
+       FROM workshops w
+       LEFT JOIN exercises e ON e.workshop_id = w.id
+       LEFT JOIN enrollments en ON en.workshop_id = w.id
+       WHERE w.instructor_id = $1
+       GROUP BY w.id
+       ORDER BY w.created_at DESC`,
+      [session.userId]
+    );
+    instructorWorkshops = result.rows;
+  }
 
   if (session.role === "trainee") {
     // Fetch enrolled workshops
@@ -182,14 +210,64 @@ export default async function DashboardPage() {
           </p>
         )}
 
-        <div className="mt-8 space-y-4">
-          <Link
-            href="/workshops"
-            className="block rounded-xl border border-gray-200 bg-white p-6 hover:border-blue-300 hover:shadow-sm transition-all text-center"
-          >
-            <p className="text-sm font-semibold text-blue-600">Browse workshops →</p>
-            <p className="mt-1 text-xs text-gray-500">View available workshops and start practising prompts.</p>
-          </Link>
+        <div className="mt-8 space-y-8">
+          {session.role === "instructor" && (
+            <div>
+              <div className="mb-4 flex items-center justify-between">
+                <h2 className="text-lg font-semibold text-gray-900">My workshops</h2>
+                <Link
+                  href="/workshops/new"
+                  className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 transition-colors"
+                >
+                  + Create workshop
+                </Link>
+              </div>
+
+              {instructorWorkshops.length === 0 ? (
+                <div className="rounded-xl border border-gray-200 bg-white p-8 text-center">
+                  <p className="text-sm text-gray-500">No workshops yet.</p>
+                  <Link
+                    href="/workshops/new"
+                    className="mt-3 inline-block text-sm text-blue-600 hover:underline"
+                  >
+                    Create your first workshop →
+                  </Link>
+                </div>
+              ) : (
+                <ul className="space-y-3">
+                  {instructorWorkshops.map((w) => (
+                    <li key={w.id}>
+                      <Link
+                        href={`/workshops/${w.id}`}
+                        className="flex items-center gap-4 rounded-xl border border-gray-200 bg-white px-6 py-4 hover:border-blue-300 hover:shadow-sm transition-all"
+                      >
+                        <div className="min-w-0 flex-1">
+                          <p className="font-semibold text-gray-900 truncate">{w.title}</p>
+                          {w.description && (
+                            <p className="mt-0.5 text-sm text-gray-500 truncate">{w.description}</p>
+                          )}
+                          <p className="mt-1 text-xs text-gray-400">
+                            {w.exercise_count} exercise{w.exercise_count !== "1" ? "s" : ""} · {w.enrolled_count} enrolled
+                          </p>
+                        </div>
+                        <WorkshopStatusBadge status={w.status} />
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          )}
+
+          {session.role === "trainee" && (
+            <Link
+              href="/workshops"
+              className="block rounded-xl border border-gray-200 bg-white p-6 hover:border-blue-300 hover:shadow-sm transition-all text-center"
+            >
+              <p className="text-sm font-semibold text-blue-600">Browse workshops →</p>
+              <p className="mt-1 text-xs text-gray-500">View available workshops and start practising prompts.</p>
+            </Link>
+          )}
 
           {session.role === "trainee" && (
             <div>
@@ -314,6 +392,28 @@ function StatusBadge({ status }: { status: ExerciseProgress["status"] }) {
   return (
     <span className="shrink-0 flex h-5 w-5 items-center justify-center rounded-full bg-gray-100">
       <span className="h-1.5 w-1.5 rounded-full bg-gray-300" />
+    </span>
+  );
+}
+
+function WorkshopStatusBadge({ status }: { status: string }) {
+  if (status === "published") {
+    return (
+      <span className="shrink-0 inline-flex items-center rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-medium text-green-700">
+        Published
+      </span>
+    );
+  }
+  if (status === "archived") {
+    return (
+      <span className="shrink-0 inline-flex items-center rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-medium text-gray-600">
+        Archived
+      </span>
+    );
+  }
+  return (
+    <span className="shrink-0 inline-flex items-center rounded-full bg-yellow-100 px-2.5 py-0.5 text-xs font-medium text-yellow-700">
+      Draft
     </span>
   );
 }
