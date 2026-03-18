@@ -116,6 +116,24 @@ function CriterionBar({
   );
 }
 
+function ScoreDelta({ delta }: { delta: number }) {
+  const positive = delta > 0;
+  const neutral = delta === 0;
+  return (
+    <span
+      className={`text-xs font-semibold ${
+        neutral
+          ? "text-gray-400 dark:text-gray-500"
+          : positive
+          ? "text-green-600 dark:text-green-400"
+          : "text-red-500 dark:text-red-400"
+      }`}
+    >
+      {neutral ? "±0" : positive ? `↑ +${delta}` : `↓ ${delta}`} pts
+    </span>
+  );
+}
+
 function LoadingSpinner({ className }: { className?: string }) {
   return (
     <svg
@@ -470,6 +488,12 @@ export default function ExerciseClient({ exercise, workshopId }: Props) {
             <span className="ml-2 text-sm text-gray-500 dark:text-gray-400">
               ({pct(currentScore.total_score, currentScore.max_score)}%)
             </span>
+            {history.length >= 2 && history[1].total_score != null && (
+              <span className="ml-2">
+                <ScoreDelta delta={currentScore.total_score - history[1].total_score} />
+                <span className="text-xs text-gray-400 dark:text-gray-500 ml-1">vs attempt {history.length - 1}</span>
+              </span>
+            )}
           </div>
           {currentScore.feedback.criteria && currentScore.feedback.criteria.length > 0 && (
             <div className="mb-5">
@@ -532,7 +556,12 @@ export default function ExerciseClient({ exercise, workshopId }: Props) {
                   </span>
                   <div className="flex items-center gap-2">
                     {s.total_score != null && s.max_score != null ? (
-                      <ScoreBadge score={s.total_score} max={s.max_score} />
+                      <>
+                        <ScoreBadge score={s.total_score} max={s.max_score} />
+                        {i < history.length - 1 && history[i + 1].total_score != null && (
+                          <ScoreDelta delta={s.total_score - history[i + 1].total_score!} />
+                        )}
+                      </>
                     ) : (
                       <span className="text-xs text-gray-400 dark:text-gray-500">no score</span>
                     )}
