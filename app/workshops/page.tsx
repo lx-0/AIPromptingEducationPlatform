@@ -3,6 +3,7 @@ import Link from "next/link";
 import { getSession } from "@/lib/session";
 import pool from "@/lib/db";
 import WorkshopDiscovery, { WorkshopSummary } from "./WorkshopDiscovery";
+import ThemeToggle from "@/components/ThemeToggle";
 
 export default async function WorkshopsPage() {
   const session = await getSession();
@@ -35,29 +36,32 @@ export default async function WorkshopsPage() {
   );
 
   return (
-    <main id="main-content" className="min-h-screen bg-gray-50">
-      <nav aria-label="Main navigation" className="bg-white shadow-sm">
+    <main id="main-content" className="min-h-screen bg-gray-50 dark:bg-gray-950">
+      <nav aria-label="Main navigation" className="bg-white dark:bg-gray-900 shadow-sm dark:shadow-gray-800">
         <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-3">
-          <Link href="/dashboard" className="text-lg font-semibold text-gray-900 hover:text-gray-700">
+          <Link href="/dashboard" className="text-lg font-semibold text-gray-900 dark:text-gray-100 hover:text-gray-700 dark:hover:text-gray-300">
             PromptingSchool
           </Link>
-          <form action="/auth/sign-out" method="POST">
-            <button type="submit" className="text-sm text-gray-600 hover:text-gray-900">
-              Sign out
-            </button>
-          </form>
+          <div className="flex items-center gap-3">
+            <ThemeToggle />
+            <form action="/auth/sign-out" method="POST">
+              <button type="submit" className="text-sm text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100">
+                Sign out
+              </button>
+            </form>
+          </div>
         </div>
       </nav>
 
       <div className="mx-auto max-w-5xl px-4 py-10">
         <div className="mb-2">
-          <Link href="/dashboard" className="text-sm text-blue-600 hover:underline">
+          <Link href="/dashboard" className="text-sm text-blue-600 hover:underline dark:text-blue-400">
             ← Dashboard
           </Link>
         </div>
 
-        <h1 className="text-2xl font-bold text-gray-900">Browse Workshops</h1>
-        <p className="mt-1 text-sm text-gray-500">
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Browse Workshops</h1>
+        <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
           Discover and enroll in published workshops to start practising.
         </p>
 

@@ -55,23 +55,23 @@ export default function JoinPage() {
 
   if (loading) {
     return (
-      <main className="flex min-h-screen items-center justify-center bg-gray-50">
-        <p className="text-sm text-gray-500">Loading…</p>
+      <main className="flex min-h-screen items-center justify-center bg-gray-50 dark:bg-gray-950">
+        <p className="text-sm text-gray-500 dark:text-gray-400">Loading…</p>
       </main>
     );
   }
 
   if (error || !workshop) {
     return (
-      <main className="flex min-h-screen items-center justify-center bg-gray-50 px-4">
-        <div className="w-full max-w-md rounded-xl border border-red-200 bg-white p-8 text-center shadow">
-          <p className="text-lg font-semibold text-red-600">Invalid invite link</p>
-          <p className="mt-2 text-sm text-gray-500">
+      <main className="flex min-h-screen items-center justify-center bg-gray-50 dark:bg-gray-950 px-4">
+        <div className="w-full max-w-md rounded-xl border border-red-200 dark:border-red-800 bg-white dark:bg-gray-900 p-8 text-center shadow dark:shadow-gray-800">
+          <p className="text-lg font-semibold text-red-600 dark:text-red-400">Invalid invite link</p>
+          <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
             {error ?? "This invite link is not valid or has expired."}
           </p>
           <Link
             href="/dashboard"
-            className="mt-6 inline-block text-sm font-medium text-blue-600 hover:underline"
+            className="mt-6 inline-block text-sm font-medium text-blue-600 hover:underline dark:text-blue-400"
           >
             Go to dashboard →
           </Link>
@@ -81,21 +81,21 @@ export default function JoinPage() {
   }
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-gray-50 px-4">
+    <main className="flex min-h-screen items-center justify-center bg-gray-50 dark:bg-gray-950 px-4">
       <div className="w-full max-w-md space-y-6">
         <div className="text-center">
-          <h1 className="text-3xl font-bold tracking-tight text-gray-900">
+          <h1 className="text-3xl font-bold tracking-tight text-gray-900 dark:text-gray-100">
             You&apos;re invited
           </h1>
-          <p className="mt-2 text-sm text-gray-600">
+          <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
             Join this workshop to start practising prompts.
           </p>
         </div>
 
-        <div className="rounded-xl border border-gray-200 bg-white p-6 shadow">
-          <h2 className="text-xl font-semibold text-gray-900">{workshop.title}</h2>
+        <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-6 shadow dark:shadow-gray-800">
+          <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">{workshop.title}</h2>
           {workshop.description && (
-            <p className="mt-2 text-sm text-gray-600">{workshop.description}</p>
+            <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">{workshop.description}</p>
           )}
 
           <button

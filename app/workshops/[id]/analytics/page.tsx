@@ -3,6 +3,7 @@ import Link from "next/link";
 import { getSession } from "@/lib/session";
 import pool from "@/lib/db";
 import AnalyticsChartsWrapper from "./AnalyticsChartsWrapper";
+import ThemeToggle from "@/components/ThemeToggle";
 import type {
   SubmissionTrendPoint,
   ScoreBucket,
@@ -245,23 +246,26 @@ export default async function AnalyticsPage({
   const hasData = Number(overview?.total_submissions ?? 0) > 0;
 
   return (
-    <main id="main-content" className="min-h-screen bg-gray-50">
-      <nav aria-label="Main navigation" className="bg-white shadow-sm">
+    <main id="main-content" className="min-h-screen bg-gray-50 dark:bg-gray-950">
+      <nav aria-label="Main navigation" className="bg-white dark:bg-gray-900 shadow-sm dark:shadow-gray-800">
         <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-3">
           <Link
             href="/dashboard"
-            className="text-lg font-semibold text-gray-900 hover:text-gray-700"
+            className="text-lg font-semibold text-gray-900 dark:text-gray-100 hover:text-gray-700 dark:hover:text-gray-300"
           >
             PromptingSchool
           </Link>
-          <form action="/auth/sign-out" method="POST">
-            <button
-              type="submit"
-              className="text-sm text-gray-600 hover:text-gray-900"
-            >
-              Sign out
-            </button>
-          </form>
+          <div className="flex items-center gap-3">
+            <ThemeToggle />
+            <form action="/auth/sign-out" method="POST">
+              <button
+                type="submit"
+                className="text-sm text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100"
+              >
+                Sign out
+              </button>
+            </form>
+          </div>
         </div>
       </nav>
 
@@ -269,7 +273,7 @@ export default async function AnalyticsPage({
         <div className="mb-2">
           <Link
             href={`/workshops/${id}`}
-            className="text-sm text-blue-600 hover:underline"
+            className="text-sm text-blue-600 hover:underline dark:text-blue-400"
           >
             ← {workshop.title}
           </Link>
@@ -277,8 +281,8 @@ export default async function AnalyticsPage({
 
         <div className="flex flex-wrap items-start gap-3 mb-8">
           <div className="flex-1 min-w-0">
-            <h1 className="text-2xl font-bold text-gray-900">Analytics</h1>
-            <p className="mt-1 text-sm text-gray-500">
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Analytics</h1>
+            <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
               Workshop performance overview and trainee insights.
             </p>
           </div>
@@ -293,48 +297,48 @@ export default async function AnalyticsPage({
 
         {/* Summary cards */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
-          <div className="rounded-xl border border-gray-200 bg-white px-5 py-4">
-            <p className="text-xs font-medium uppercase tracking-wide text-gray-500">
+          <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-5 py-4">
+            <p className="text-xs font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400">
               Enrolled
             </p>
-            <p className="mt-1 text-3xl font-bold text-gray-900">
+            <p className="mt-1 text-3xl font-bold text-gray-900 dark:text-gray-100">
               {enrolledCount}
             </p>
           </div>
-          <div className="rounded-xl border border-gray-200 bg-white px-5 py-4">
-            <p className="text-xs font-medium uppercase tracking-wide text-gray-500">
+          <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-5 py-4">
+            <p className="text-xs font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400">
               Submissions
             </p>
-            <p className="mt-1 text-3xl font-bold text-gray-900">
+            <p className="mt-1 text-3xl font-bold text-gray-900 dark:text-gray-100">
               {overview?.total_submissions ?? "0"}
             </p>
           </div>
-          <div className="rounded-xl border border-gray-200 bg-white px-5 py-4">
-            <p className="text-xs font-medium uppercase tracking-wide text-gray-500">
+          <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-5 py-4">
+            <p className="text-xs font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400">
               Avg score
             </p>
-            <p className="mt-1 text-3xl font-bold text-gray-900">
+            <p className="mt-1 text-3xl font-bold text-gray-900 dark:text-gray-100">
               {overview?.avg_score_pct != null
                 ? `${overview.avg_score_pct}%`
                 : "—"}
             </p>
           </div>
-          <div className="rounded-xl border border-gray-200 bg-white px-5 py-4">
-            <p className="text-xs font-medium uppercase tracking-wide text-gray-500">
+          <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-5 py-4">
+            <p className="text-xs font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400">
               Completion
             </p>
-            <p className="mt-1 text-3xl font-bold text-gray-900">
+            <p className="mt-1 text-3xl font-bold text-gray-900 dark:text-gray-100">
               {completionPct != null ? `${completionPct}%` : "—"}
             </p>
-            <p className="mt-0.5 text-xs text-gray-400">
+            <p className="mt-0.5 text-xs text-gray-400 dark:text-gray-500">
               {uniqueTrainees} of {enrolledCount} active
             </p>
           </div>
         </div>
 
         {!hasData ? (
-          <div className="rounded-xl border border-gray-200 bg-white p-10 text-center">
-            <p className="text-sm text-gray-500">
+          <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-10 text-center">
+            <p className="text-sm text-gray-500 dark:text-gray-400">
               No submissions yet. Charts will appear once trainees start
               submitting.
             </p>

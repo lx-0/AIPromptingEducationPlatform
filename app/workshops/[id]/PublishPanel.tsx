@@ -48,18 +48,18 @@ export default function PublishPanel({ workshopId, status, inviteCode }: Publish
       : `/join/${currentInviteCode}`;
 
     return (
-      <div className="rounded-xl border border-green-200 bg-green-50 p-5">
+      <div className="rounded-xl border border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-950 p-5">
         <div className="flex items-center gap-2 mb-3">
-          <svg className="h-4 w-4 text-green-600" viewBox="0 0 16 16" fill="currentColor">
+          <svg className="h-4 w-4 text-green-600 dark:text-green-400" viewBox="0 0 16 16" fill="currentColor">
             <path d="M8 1a7 7 0 100 14A7 7 0 008 1zm3.28 5.28l-4 4a.75.75 0 01-1.06 0l-2-2a.75.75 0 011.06-1.06L6.75 8.69l3.47-3.47a.75.75 0 011.06 1.06z" />
           </svg>
-          <p className="text-sm font-semibold text-green-800">Workshop published</p>
+          <p className="text-sm font-semibold text-green-800 dark:text-green-300">Workshop published</p>
         </div>
-        <p className="text-xs text-green-700 mb-3">
+        <p className="text-xs text-green-700 dark:text-green-400 mb-3">
           Share this invite link with your trainees:
         </p>
         <div className="flex items-center gap-2">
-          <code className="flex-1 min-w-0 rounded-lg border border-green-200 bg-white px-3 py-2 text-sm font-mono text-gray-700 truncate">
+          <code className="flex-1 min-w-0 rounded-lg border border-green-200 dark:border-green-700 bg-white dark:bg-gray-900 px-3 py-2 text-sm font-mono text-gray-700 dark:text-gray-300 truncate">
             /join/{currentInviteCode}
           </code>
           <button
@@ -75,13 +75,13 @@ export default function PublishPanel({ workshopId, status, inviteCode }: Publish
 
   if (status === "draft") {
     return (
-      <div className="rounded-xl border border-yellow-200 bg-yellow-50 p-5">
-        <p className="text-sm font-semibold text-yellow-800 mb-1">This workshop is a draft</p>
-        <p className="text-xs text-yellow-700 mb-4">
+      <div className="rounded-xl border border-yellow-200 dark:border-yellow-800 bg-yellow-50 dark:bg-yellow-950 p-5">
+        <p className="text-sm font-semibold text-yellow-800 dark:text-yellow-300 mb-1">This workshop is a draft</p>
+        <p className="text-xs text-yellow-700 dark:text-yellow-400 mb-4">
           Publish it to generate an invite code and allow trainees to join.
         </p>
         {error && (
-          <p className="mb-3 text-xs text-red-600">{error}</p>
+          <p className="mb-3 text-xs text-red-600 dark:text-red-400">{error}</p>
         )}
         <button
           onClick={handlePublish}

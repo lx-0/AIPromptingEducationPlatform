@@ -36,13 +36,13 @@ export default function RubricBuilder({ value, onChange }: Props) {
         {value.map((item, index) => (
           <div
             key={index}
-            className="rounded-lg border border-gray-200 bg-white p-4"
+            className="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-4"
           >
             <div className="flex items-start gap-3">
               <div className="flex-1 space-y-2">
                 <div className="flex gap-2">
                   <div className="flex-1">
-                    <label className="mb-1 block text-xs font-medium text-gray-600">
+                    <label className="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">
                       Criterion name
                     </label>
                     <input
@@ -52,11 +52,11 @@ export default function RubricBuilder({ value, onChange }: Props) {
                         updateCriterion(index, "criterion", e.target.value)
                       }
                       placeholder="e.g. Clarity"
-                      className="w-full rounded-md border border-gray-300 px-3 py-1.5 text-sm focus:border-blue-400 focus:outline-none"
+                      className="w-full rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 px-3 py-1.5 text-sm focus:border-blue-400 focus:outline-none"
                     />
                   </div>
                   <div className="w-28">
-                    <label className="mb-1 block text-xs font-medium text-gray-600">
+                    <label className="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">
                       Max points
                     </label>
                     <input
@@ -70,12 +70,12 @@ export default function RubricBuilder({ value, onChange }: Props) {
                           Math.max(1, parseInt(e.target.value) || 1)
                         )
                       }
-                      className="w-full rounded-md border border-gray-300 px-3 py-1.5 text-sm focus:border-blue-400 focus:outline-none"
+                      className="w-full rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 px-3 py-1.5 text-sm focus:border-blue-400 focus:outline-none"
                     />
                   </div>
                 </div>
                 <div>
-                  <label className="mb-1 block text-xs font-medium text-gray-600">
+                  <label className="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">
                     Description
                   </label>
                   <input
@@ -85,14 +85,14 @@ export default function RubricBuilder({ value, onChange }: Props) {
                       updateCriterion(index, "description", e.target.value)
                     }
                     placeholder="What does this criterion evaluate?"
-                    className="w-full rounded-md border border-gray-300 px-3 py-1.5 text-sm focus:border-blue-400 focus:outline-none"
+                    className="w-full rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 px-3 py-1.5 text-sm focus:border-blue-400 focus:outline-none"
                   />
                 </div>
               </div>
               <button
                 type="button"
                 onClick={() => removeCriterion(index)}
-                className="mt-6 text-gray-400 hover:text-red-500 transition-colors"
+                className="mt-6 text-gray-400 hover:text-red-500 dark:hover:text-red-400 transition-colors"
                 aria-label="Remove criterion"
               >
                 ✕
@@ -103,7 +103,7 @@ export default function RubricBuilder({ value, onChange }: Props) {
       </div>
 
       {value.length === 0 && (
-        <p className="mb-3 text-sm text-gray-400">
+        <p className="mb-3 text-sm text-gray-400 dark:text-gray-500">
           No criteria yet. Add at least one criterion.
         </p>
       )}
@@ -111,7 +111,7 @@ export default function RubricBuilder({ value, onChange }: Props) {
       <button
         type="button"
         onClick={addCriterion}
-        className="mt-3 inline-flex items-center gap-1 rounded-md border border-dashed border-gray-300 px-3 py-1.5 text-sm text-gray-600 hover:border-blue-400 hover:text-blue-600 transition-colors"
+        className="mt-3 inline-flex items-center gap-1 rounded-md border border-dashed border-gray-300 dark:border-gray-600 px-3 py-1.5 text-sm text-gray-600 dark:text-gray-400 hover:border-blue-400 hover:text-blue-600 dark:hover:border-blue-500 dark:hover:text-blue-400 transition-colors"
       >
         + Add criterion
       </button>

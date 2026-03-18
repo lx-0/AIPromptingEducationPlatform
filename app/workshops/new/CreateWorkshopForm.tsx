@@ -45,13 +45,13 @@ export default function CreateWorkshopForm() {
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       {error && (
-        <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+        <div className="rounded-lg border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-950 px-4 py-3 text-sm text-red-700 dark:text-red-300">
           {error}
         </div>
       )}
 
       <div>
-        <label className="mb-1.5 block text-sm font-medium text-gray-700">
+        <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300">
           Title <span className="text-red-500">*</span>
         </label>
         <input
@@ -59,22 +59,22 @@ export default function CreateWorkshopForm() {
           value={title}
           onChange={(e) => setTitle(e.target.value)}
           placeholder="e.g. Prompt Engineering Fundamentals"
-          className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-400 focus:outline-none"
+          className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-3 py-2 text-sm text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:border-blue-400 focus:outline-none dark:focus:border-blue-500"
           autoFocus
         />
       </div>
 
       <div>
-        <label className="mb-1.5 block text-sm font-medium text-gray-700">
+        <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300">
           Description{" "}
-          <span className="text-xs font-normal text-gray-400">(optional)</span>
+          <span className="text-xs font-normal text-gray-400 dark:text-gray-500">(optional)</span>
         </label>
         <textarea
           value={description}
           onChange={(e) => setDescription(e.target.value)}
           rows={3}
           placeholder="What will trainees learn in this workshop?"
-          className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-400 focus:outline-none"
+          className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-3 py-2 text-sm text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:border-blue-400 focus:outline-none dark:focus:border-blue-500"
         />
       </div>
 
@@ -89,7 +89,7 @@ export default function CreateWorkshopForm() {
         <button
           type="button"
           onClick={() => router.push("/dashboard")}
-          className="rounded-lg border border-gray-200 px-5 py-3 text-sm font-medium text-gray-700 hover:border-gray-300 transition-colors"
+          className="rounded-lg border border-gray-200 dark:border-gray-700 px-5 py-3 text-sm font-medium text-gray-700 dark:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600 transition-colors"
         >
           Cancel
         </button>

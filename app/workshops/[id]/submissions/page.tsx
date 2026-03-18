@@ -2,6 +2,7 @@ import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
 import { getSession } from "@/lib/session";
 import pool from "@/lib/db";
+import ThemeToggle from "@/components/ThemeToggle";
 
 type Submission = {
   id: string;
@@ -64,31 +65,34 @@ export default async function SubmissionsPage({
   const submissions = submissionsResult.rows;
 
   return (
-    <main className="min-h-screen bg-gray-50">
-      <nav className="bg-white shadow-sm">
+    <main className="min-h-screen bg-gray-50 dark:bg-gray-950">
+      <nav className="bg-white dark:bg-gray-900 shadow-sm dark:shadow-gray-800">
         <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-3">
-          <Link href="/dashboard" className="text-lg font-semibold text-gray-900 hover:text-gray-700">
+          <Link href="/dashboard" className="text-lg font-semibold text-gray-900 dark:text-gray-100 hover:text-gray-700 dark:hover:text-gray-300">
             PromptingSchool
           </Link>
-          <form action="/auth/sign-out" method="POST">
-            <button type="submit" className="text-sm text-gray-600 hover:text-gray-900">
-              Sign out
-            </button>
-          </form>
+          <div className="flex items-center gap-3">
+            <ThemeToggle />
+            <form action="/auth/sign-out" method="POST">
+              <button type="submit" className="text-sm text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100">
+                Sign out
+              </button>
+            </form>
+          </div>
         </div>
       </nav>
 
       <div className="mx-auto max-w-5xl px-4 py-10">
         <div className="mb-2">
-          <Link href={`/workshops/${id}`} className="text-sm text-blue-600 hover:underline">
+          <Link href={`/workshops/${id}`} className="text-sm text-blue-600 hover:underline dark:text-blue-400">
             ← {workshop.title}
           </Link>
         </div>
 
         <div className="flex flex-wrap items-start gap-3">
           <div className="flex-1 min-w-0">
-            <h1 className="text-2xl font-bold text-gray-900">Submissions</h1>
-            <p className="mt-1 text-sm text-gray-500">All trainee submissions for this workshop.</p>
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Submissions</h1>
+            <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">All trainee submissions for this workshop.</p>
           </div>
           <a
             href={`/api/workshops/${id}/submissions/export`}
@@ -100,45 +104,45 @@ export default async function SubmissionsPage({
         </div>
 
         {submissions.length === 0 ? (
-          <div className="mt-8 rounded-xl border border-gray-200 bg-white p-6 text-center text-gray-500">
+          <div className="mt-8 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-6 text-center text-gray-500 dark:text-gray-400">
             <p className="text-sm">No submissions yet.</p>
           </div>
         ) : (
-          <div className="mt-6 overflow-x-auto rounded-xl border border-gray-200 bg-white">
+          <div className="mt-6 overflow-x-auto rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900">
             <table className="w-full text-sm min-w-[600px]">
               <thead>
-                <tr className="border-b border-gray-200 bg-gray-50">
-                  <th className="px-4 py-3 text-left font-medium text-gray-600">Trainee</th>
-                  <th className="px-4 py-3 text-left font-medium text-gray-600">Exercise</th>
-                  <th className="px-4 py-3 text-left font-medium text-gray-600">Prompt</th>
-                  <th className="px-4 py-3 text-left font-medium text-gray-600">Score</th>
-                  <th className="px-4 py-3 text-left font-medium text-gray-600">Submitted</th>
+                <tr className="border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800">
+                  <th className="px-4 py-3 text-left font-medium text-gray-600 dark:text-gray-400">Trainee</th>
+                  <th className="px-4 py-3 text-left font-medium text-gray-600 dark:text-gray-400">Exercise</th>
+                  <th className="px-4 py-3 text-left font-medium text-gray-600 dark:text-gray-400">Prompt</th>
+                  <th className="px-4 py-3 text-left font-medium text-gray-600 dark:text-gray-400">Score</th>
+                  <th className="px-4 py-3 text-left font-medium text-gray-600 dark:text-gray-400">Submitted</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100">
+              <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
                 {submissions.map((sub) => (
-                  <tr key={sub.id} className="hover:bg-gray-50 transition-colors">
-                    <td className="px-4 py-3 font-medium text-gray-900 whitespace-nowrap">
+                  <tr key={sub.id} className="hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
+                    <td className="px-4 py-3 font-medium text-gray-900 dark:text-gray-100 whitespace-nowrap">
                       {sub.trainee_name}
                     </td>
-                    <td className="px-4 py-3 text-gray-700 whitespace-nowrap">
+                    <td className="px-4 py-3 text-gray-700 dark:text-gray-300 whitespace-nowrap">
                       {sub.exercise_title}
                     </td>
-                    <td className="px-4 py-3 text-gray-600 max-w-xs">
+                    <td className="px-4 py-3 text-gray-600 dark:text-gray-400 max-w-xs">
                       <span className="block truncate" title={sub.prompt_text}>
                         {sub.prompt_text}
                       </span>
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap">
                       {sub.total_score != null && sub.max_score != null ? (
-                        <span className="inline-flex items-center rounded-full bg-blue-50 px-2.5 py-0.5 text-xs font-medium text-blue-700">
+                        <span className="inline-flex items-center rounded-full bg-blue-50 dark:bg-blue-950 px-2.5 py-0.5 text-xs font-medium text-blue-700 dark:text-blue-300">
                           {sub.total_score}/{sub.max_score}
                         </span>
                       ) : (
-                        <span className="text-gray-400 text-xs">Pending</span>
+                        <span className="text-gray-400 dark:text-gray-500 text-xs">Pending</span>
                       )}
                     </td>
-                    <td className="px-4 py-3 text-gray-500 whitespace-nowrap">
+                    <td className="px-4 py-3 text-gray-500 dark:text-gray-400 whitespace-nowrap">
                       {new Date(sub.submitted_at).toLocaleString()}
                     </td>
                   </tr>

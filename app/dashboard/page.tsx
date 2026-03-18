@@ -3,6 +3,7 @@ import Link from "next/link";
 import { getSession } from "@/lib/session";
 import pool from "@/lib/db";
 import GamificationPanel from "@/components/GamificationPanel";
+import ThemeToggle from "@/components/ThemeToggle";
 
 type InstructorWorkshop = {
   id: string;
@@ -184,29 +185,32 @@ export default async function DashboardPage() {
   }
 
   return (
-    <main id="main-content" className="min-h-screen bg-gray-50">
-      <nav aria-label="Main navigation" className="bg-white shadow-sm">
+    <main id="main-content" className="min-h-screen bg-gray-50 dark:bg-gray-950">
+      <nav aria-label="Main navigation" className="bg-white dark:bg-gray-900 shadow-sm dark:shadow-gray-800">
         <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-3">
-          <span className="text-lg font-semibold text-gray-900">
+          <span className="text-lg font-semibold text-gray-900 dark:text-gray-100">
             PromptingSchool
           </span>
-          <form action="/auth/sign-out" method="POST">
-            <button
-              type="submit"
-              className="text-sm text-gray-600 hover:text-gray-900"
-            >
-              Sign out
-            </button>
-          </form>
+          <div className="flex items-center gap-3">
+            <ThemeToggle />
+            <form action="/auth/sign-out" method="POST">
+              <button
+                type="submit"
+                className="text-sm text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100"
+              >
+                Sign out
+              </button>
+            </form>
+          </div>
         </div>
       </nav>
 
       <div className="mx-auto max-w-5xl px-4 py-10">
-        <h1 className="text-2xl font-bold text-gray-900">
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
           Welcome, {session.displayName ?? session.email}
         </h1>
         {session.role && (
-          <p className="mt-1 text-sm capitalize text-gray-500">
+          <p className="mt-1 text-sm capitalize text-gray-500 dark:text-gray-400">
             Role: {session.role}
           </p>
         )}
@@ -215,7 +219,7 @@ export default async function DashboardPage() {
           {session.role === "instructor" && (
             <div>
               <div className="mb-4 flex items-center justify-between">
-                <h2 className="text-lg font-semibold text-gray-900">My workshops</h2>
+                <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">My workshops</h2>
                 <Link
                   href="/workshops/new"
                   className="rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-blue-700 transition-colors"
@@ -225,11 +229,11 @@ export default async function DashboardPage() {
               </div>
 
               {instructorWorkshops.length === 0 ? (
-                <div className="rounded-xl border border-gray-200 bg-white p-8 text-center">
-                  <p className="text-sm text-gray-500">No workshops yet.</p>
+                <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-8 text-center">
+                  <p className="text-sm text-gray-500 dark:text-gray-400">No workshops yet.</p>
                   <Link
                     href="/workshops/new"
-                    className="mt-3 inline-block text-sm text-blue-600 hover:underline"
+                    className="mt-3 inline-block text-sm text-blue-600 hover:underline dark:text-blue-400"
                   >
                     Create your first workshop →
                   </Link>
@@ -240,14 +244,14 @@ export default async function DashboardPage() {
                     <li key={w.id}>
                       <Link
                         href={`/workshops/${w.id}`}
-                        className="flex items-center gap-4 rounded-xl border border-gray-200 bg-white px-6 py-4 hover:border-blue-300 hover:shadow-sm transition-all focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                        className="flex items-center gap-4 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-6 py-4 hover:border-blue-300 dark:hover:border-blue-600 hover:shadow-sm transition-all focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-gray-950"
                       >
                         <div className="min-w-0 flex-1">
-                          <p className="font-semibold text-gray-900 truncate">{w.title}</p>
+                          <p className="font-semibold text-gray-900 dark:text-gray-100 truncate">{w.title}</p>
                           {w.description && (
-                            <p className="mt-0.5 text-sm text-gray-500 truncate">{w.description}</p>
+                            <p className="mt-0.5 text-sm text-gray-500 dark:text-gray-400 truncate">{w.description}</p>
                           )}
-                          <p className="mt-1 text-xs text-gray-400">
+                          <p className="mt-1 text-xs text-gray-400 dark:text-gray-500">
                             {w.exercise_count} exercise{w.exercise_count !== "1" ? "s" : ""} · {w.enrolled_count} enrolled
                           </p>
                         </div>
@@ -263,10 +267,10 @@ export default async function DashboardPage() {
           {session.role === "trainee" && (
             <Link
               href="/workshops"
-              className="block rounded-xl border border-gray-200 bg-white p-6 hover:border-blue-300 hover:shadow-sm transition-all text-center focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+              className="block rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-6 hover:border-blue-300 dark:hover:border-blue-600 hover:shadow-sm transition-all text-center focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-gray-950"
             >
-              <p className="text-sm font-semibold text-blue-600">Browse workshops →</p>
-              <p className="mt-1 text-xs text-gray-500">View available workshops and start practising prompts.</p>
+              <p className="text-sm font-semibold text-blue-600 dark:text-blue-400">Browse workshops →</p>
+              <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">View available workshops and start practising prompts.</p>
             </Link>
           )}
 
@@ -276,42 +280,42 @@ export default async function DashboardPage() {
 
           {session.role === "trainee" && (
             <div>
-              <h2 className="text-lg font-semibold text-gray-900 mb-3">My progress</h2>
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-3">My progress</h2>
               {workshopProgress.length === 0 ? (
-                <div className="rounded-xl border border-gray-200 bg-white p-6 text-center text-gray-500">
+                <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-6 text-center text-gray-500 dark:text-gray-400">
                   <p className="text-sm">You haven&apos;t joined any workshops yet.</p>
-                  <p className="mt-1 text-xs text-gray-400">Use an invite link to join one.</p>
+                  <p className="mt-1 text-xs text-gray-400 dark:text-gray-500">Use an invite link to join one.</p>
                 </div>
               ) : (
                 <ul className="space-y-4">
                   {workshopProgress.map((workshop) => (
-                    <li key={workshop.id} className="rounded-xl border border-gray-200 bg-white overflow-hidden">
+                    <li key={workshop.id} className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 overflow-hidden">
                       {/* Workshop header */}
-                      <div className="p-5 border-b border-gray-100">
+                      <div className="p-5 border-b border-gray-100 dark:border-gray-800">
                         <div className="flex items-start justify-between gap-4">
                           <div className="min-w-0">
                             <Link
                               href={`/workshops/${workshop.id}`}
-                              className="font-semibold text-gray-900 hover:text-blue-600 transition-colors"
+                              className="font-semibold text-gray-900 dark:text-gray-100 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
                             >
                               {workshop.title}
                             </Link>
                             {workshop.description && (
-                              <p className="mt-1 text-sm text-gray-500 truncate">{workshop.description}</p>
+                              <p className="mt-1 text-sm text-gray-500 dark:text-gray-400 truncate">{workshop.description}</p>
                             )}
                           </div>
                           <div className="shrink-0 text-right">
-                            <span className="text-sm font-semibold text-gray-900">
+                            <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">
                               {workshop.completion_pct}%
                             </span>
-                            <p className="text-xs text-gray-400">
+                            <p className="text-xs text-gray-400 dark:text-gray-500">
                               {workshop.completed_exercises}/{workshop.total_exercises} exercises
                             </p>
                           </div>
                         </div>
                         {/* Overall completion bar */}
                         <div className="mt-3">
-                          <div className="h-2 w-full rounded-full bg-gray-100 overflow-hidden">
+                          <div className="h-2 w-full rounded-full bg-gray-100 dark:bg-gray-800 overflow-hidden">
                             <div
                               className="h-2 rounded-full bg-blue-500 transition-all"
                               style={{ width: `${workshop.completion_pct}%` }}
@@ -322,17 +326,17 @@ export default async function DashboardPage() {
 
                       {/* Exercise list */}
                       {workshop.exercises.length > 0 && (
-                        <ul className="divide-y divide-gray-50">
+                        <ul className="divide-y divide-gray-50 dark:divide-gray-800">
                           {workshop.exercises.map((ex) => (
                             <li key={ex.exercise_id}>
                               <Link
                                 href={`/workshops/${workshop.id}/exercises/${ex.exercise_id}`}
-                                className="flex items-center gap-3 px-5 py-3 hover:bg-gray-50 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-inset"
+                                className="flex items-center gap-3 px-5 py-3 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-inset"
                               >
                                 {/* Status icon */}
                                 <StatusBadge status={ex.status} />
 
-                                <span className="flex-1 min-w-0 text-sm text-gray-700 truncate">
+                                <span className="flex-1 min-w-0 text-sm text-gray-700 dark:text-gray-300 truncate">
                                   {ex.exercise_title}
                                 </span>
 
@@ -341,18 +345,18 @@ export default async function DashboardPage() {
                                   <span
                                     className={`shrink-0 text-xs font-semibold px-2 py-0.5 rounded-full ${
                                       ex.best_score_pct >= 80
-                                        ? "bg-green-100 text-green-700"
+                                        ? "bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300"
                                         : ex.best_score_pct >= 50
-                                        ? "bg-yellow-100 text-yellow-700"
-                                        : "bg-red-100 text-red-700"
+                                        ? "bg-yellow-100 dark:bg-yellow-900 text-yellow-700 dark:text-yellow-300"
+                                        : "bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300"
                                     }`}
                                   >
                                     {ex.best_score_pct}%
                                   </span>
                                 ) : ex.status === "submitted" ? (
-                                  <span className="shrink-0 text-xs text-gray-400">Pending score</span>
+                                  <span className="shrink-0 text-xs text-gray-400 dark:text-gray-500">Pending score</span>
                                 ) : (
-                                  <span className="shrink-0 text-xs text-gray-300">Not started</span>
+                                  <span className="shrink-0 text-xs text-gray-300 dark:text-gray-600">Not started</span>
                                 )}
                               </Link>
                             </li>
@@ -361,7 +365,7 @@ export default async function DashboardPage() {
                       )}
 
                       {workshop.exercises.length === 0 && (
-                        <p className="px-5 py-4 text-sm text-gray-400">No exercises yet.</p>
+                        <p className="px-5 py-4 text-sm text-gray-400 dark:text-gray-500">No exercises yet.</p>
                       )}
                     </li>
                   ))}
@@ -378,8 +382,8 @@ export default async function DashboardPage() {
 function StatusBadge({ status }: { status: ExerciseProgress["status"] }) {
   if (status === "scored") {
     return (
-      <span className="shrink-0 flex h-5 w-5 items-center justify-center rounded-full bg-green-100">
-        <svg className="h-3 w-3 text-green-600" viewBox="0 0 12 12" fill="none">
+      <span className="shrink-0 flex h-5 w-5 items-center justify-center rounded-full bg-green-100 dark:bg-green-900">
+        <svg className="h-3 w-3 text-green-600 dark:text-green-400" viewBox="0 0 12 12" fill="none">
           <path d="M2 6l3 3 5-5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
         </svg>
       </span>
@@ -387,16 +391,16 @@ function StatusBadge({ status }: { status: ExerciseProgress["status"] }) {
   }
   if (status === "submitted") {
     return (
-      <span className="shrink-0 flex h-5 w-5 items-center justify-center rounded-full bg-blue-100">
-        <svg className="h-3 w-3 text-blue-500" viewBox="0 0 12 12" fill="currentColor">
+      <span className="shrink-0 flex h-5 w-5 items-center justify-center rounded-full bg-blue-100 dark:bg-blue-900">
+        <svg className="h-3 w-3 text-blue-500 dark:text-blue-400" viewBox="0 0 12 12" fill="currentColor">
           <circle cx="6" cy="6" r="2.5" />
         </svg>
       </span>
     );
   }
   return (
-    <span className="shrink-0 flex h-5 w-5 items-center justify-center rounded-full bg-gray-100">
-      <span className="h-1.5 w-1.5 rounded-full bg-gray-300" />
+    <span className="shrink-0 flex h-5 w-5 items-center justify-center rounded-full bg-gray-100 dark:bg-gray-800">
+      <span className="h-1.5 w-1.5 rounded-full bg-gray-300 dark:bg-gray-600" />
     </span>
   );
 }
@@ -404,20 +408,20 @@ function StatusBadge({ status }: { status: ExerciseProgress["status"] }) {
 function WorkshopStatusBadge({ status }: { status: string }) {
   if (status === "published") {
     return (
-      <span className="shrink-0 inline-flex items-center rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-medium text-green-700">
+      <span className="shrink-0 inline-flex items-center rounded-full bg-green-100 dark:bg-green-900 px-2.5 py-0.5 text-xs font-medium text-green-700 dark:text-green-300">
         Published
       </span>
     );
   }
   if (status === "archived") {
     return (
-      <span className="shrink-0 inline-flex items-center rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-medium text-gray-600">
+      <span className="shrink-0 inline-flex items-center rounded-full bg-gray-100 dark:bg-gray-800 px-2.5 py-0.5 text-xs font-medium text-gray-600 dark:text-gray-400">
         Archived
       </span>
     );
   }
   return (
-    <span className="shrink-0 inline-flex items-center rounded-full bg-yellow-100 px-2.5 py-0.5 text-xs font-medium text-yellow-700">
+    <span className="shrink-0 inline-flex items-center rounded-full bg-yellow-100 dark:bg-yellow-900 px-2.5 py-0.5 text-xs font-medium text-yellow-700 dark:text-yellow-300">
       Draft
     </span>
   );

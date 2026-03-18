@@ -40,7 +40,7 @@ export default function BadgeCelebration({ badges, onDismiss }: Props) {
       onClick={() => { setVisible(false); onDismiss(); }}
     >
       <div
-        className="relative mx-4 max-w-sm w-full rounded-2xl bg-white p-8 text-center shadow-2xl"
+        className="relative mx-4 max-w-sm w-full rounded-2xl bg-white dark:bg-gray-900 p-8 text-center shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Confetti circles (CSS animation) */}
@@ -76,10 +76,10 @@ export default function BadgeCelebration({ badges, onDismiss }: Props) {
                 >
                   {badge.emoji}
                 </span>
-                <span className="text-sm font-bold text-gray-900">
+                <span className="text-sm font-bold text-gray-900 dark:text-gray-100">
                   {badge.label}
                 </span>
-                <span className="text-xs text-gray-500">{badge.description}</span>
+                <span className="text-xs text-gray-500 dark:text-gray-400">{badge.description}</span>
               </div>
             ))}
           </div>

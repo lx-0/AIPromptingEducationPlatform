@@ -94,7 +94,7 @@ export default function WorkshopDiscovery({
             placeholder="Search workshops…"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            className="w-full rounded-lg border border-gray-200 bg-white py-2 pl-9 pr-4 text-sm text-gray-900 placeholder-gray-400 focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-100"
+            className="w-full rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 py-2 pl-9 pr-4 text-sm text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-100 dark:focus:ring-blue-900"
           />
         </div>
 
@@ -106,7 +106,7 @@ export default function WorkshopDiscovery({
             id="sort"
             value={sort}
             onChange={(e) => setSort(e.target.value as SortOption)}
-            className="rounded-lg border border-gray-200 bg-white py-2 pl-3 pr-8 text-sm text-gray-700 focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-100"
+            className="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 py-2 pl-3 pr-8 text-sm text-gray-700 dark:text-gray-300 focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-100 dark:focus:ring-blue-900"
           >
             <option value="newest">Newest</option>
             <option value="popular">Most popular</option>
@@ -116,21 +116,21 @@ export default function WorkshopDiscovery({
       </div>
 
       {error && (
-        <div role="alert" aria-live="polite" className="mt-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+        <div role="alert" aria-live="polite" className="mt-4 rounded-lg border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-950 px-4 py-3 text-sm text-red-700 dark:text-red-300">
           {error}
         </div>
       )}
 
       {/* Workshop grid */}
       {filtered.length === 0 ? (
-        <div className="mt-8 rounded-xl border border-gray-200 bg-white p-10 text-center">
-          <p className="text-sm text-gray-500">
+        <div className="mt-8 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-10 text-center">
+          <p className="text-sm text-gray-500 dark:text-gray-400">
             {query ? `No workshops match "${query}".` : "No published workshops yet. Check back soon."}
           </p>
           {query && (
             <button
               onClick={() => setQuery("")}
-              className="mt-3 text-sm text-blue-600 hover:underline"
+              className="mt-3 text-sm text-blue-600 hover:underline dark:text-blue-400"
             >
               Clear search
             </button>
@@ -143,21 +143,21 @@ export default function WorkshopDiscovery({
             const isLoading = enrolling === workshop.id;
 
             return (
-              <li key={workshop.id} className="flex flex-col rounded-xl border border-gray-200 bg-white shadow-sm hover:shadow-md transition-shadow">
+              <li key={workshop.id} className="flex flex-col rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 shadow-sm hover:shadow-md dark:hover:shadow-gray-800 transition-shadow">
                 <Link
                   href={`/workshops/${workshop.id}`}
                   className="flex flex-1 flex-col p-5 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-inset rounded-t-xl"
                 >
-                  <h2 className="text-base font-semibold text-gray-900 leading-snug line-clamp-2">
+                  <h2 className="text-base font-semibold text-gray-900 dark:text-gray-100 leading-snug line-clamp-2">
                     {workshop.title}
                   </h2>
                   {workshop.description && (
-                    <p className="mt-2 text-sm text-gray-500 line-clamp-3 flex-1">
+                    <p className="mt-2 text-sm text-gray-500 dark:text-gray-400 line-clamp-3 flex-1">
                       {workshop.description}
                     </p>
                   )}
-                  <div className="mt-4 flex items-center gap-3 text-xs text-gray-400">
-                    <span className="font-medium text-gray-600">{workshop.instructor_name}</span>
+                  <div className="mt-4 flex items-center gap-3 text-xs text-gray-400 dark:text-gray-500">
+                    <span className="font-medium text-gray-600 dark:text-gray-400">{workshop.instructor_name}</span>
                     <span>·</span>
                     <span>
                       {workshop.exercise_count}{" "}
@@ -171,11 +171,11 @@ export default function WorkshopDiscovery({
                   </div>
                 </Link>
 
-                <div className="border-t border-gray-100 px-5 py-3">
+                <div className="border-t border-gray-100 dark:border-gray-800 px-5 py-3">
                   {isEnrolled ? (
                     <Link
                       href={`/workshops/${workshop.id}`}
-                      className="flex w-full items-center justify-center rounded-lg bg-green-50 px-4 py-2 text-sm font-medium text-green-700 hover:bg-green-100 transition-colors"
+                      className="flex w-full items-center justify-center rounded-lg bg-green-50 dark:bg-green-950 px-4 py-2 text-sm font-medium text-green-700 dark:text-green-300 hover:bg-green-100 dark:hover:bg-green-900 transition-colors"
                     >
                       Continue →
                     </Link>
@@ -195,7 +195,7 @@ export default function WorkshopDiscovery({
         </ul>
       )}
 
-      <p className="mt-6 text-center text-xs text-gray-400">
+      <p className="mt-6 text-center text-xs text-gray-400 dark:text-gray-500">
         {filtered.length} {filtered.length === 1 ? "workshop" : "workshops"} found
       </p>
     </div>

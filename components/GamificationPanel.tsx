@@ -34,9 +34,9 @@ export default function GamificationPanel() {
 
   if (loading) {
     return (
-      <div className="rounded-xl border border-gray-200 bg-white p-6 animate-pulse">
-        <div className="h-4 bg-gray-100 rounded w-1/3 mb-4" />
-        <div className="h-16 bg-gray-100 rounded" />
+      <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-6 animate-pulse">
+        <div className="h-4 bg-gray-100 dark:bg-gray-800 rounded w-1/3 mb-4" />
+        <div className="h-16 bg-gray-100 dark:bg-gray-800 rounded" />
       </div>
     );
   }
@@ -48,7 +48,7 @@ export default function GamificationPanel() {
   return (
     <div className="space-y-4">
       {/* Streak card */}
-      <div className="rounded-xl border border-orange-200 bg-orange-50 px-6 py-4 flex items-center gap-4">
+      <div className="rounded-xl border border-orange-200 dark:border-orange-800 bg-orange-50 dark:bg-orange-950 px-6 py-4 flex items-center gap-4">
         <span className="text-3xl" aria-hidden="true">
           {streak.current_streak >= 7
             ? "⚡"
@@ -57,12 +57,12 @@ export default function GamificationPanel() {
             : "📅"}
         </span>
         <div>
-          <p className="text-sm font-semibold text-orange-800">
+          <p className="text-sm font-semibold text-orange-800 dark:text-orange-300">
             {streak.current_streak > 0
               ? `${streak.current_streak}-day streak!`
               : "No active streak"}
           </p>
-          <p className="text-xs text-orange-600">
+          <p className="text-xs text-orange-600 dark:text-orange-400">
             Best: {streak.longest_streak} day
             {streak.longest_streak !== 1 ? "s" : ""}
             {streak.last_sub_date && (
@@ -73,18 +73,18 @@ export default function GamificationPanel() {
       </div>
 
       {/* Badges */}
-      <div className="rounded-xl border border-gray-200 bg-white p-6">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">
+      <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-6">
+        <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">
           Badges
           {badges.length > 0 && (
-            <span className="ml-2 inline-flex items-center rounded-full bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-700">
+            <span className="ml-2 inline-flex items-center rounded-full bg-blue-100 dark:bg-blue-900 px-2 py-0.5 text-xs font-medium text-blue-700 dark:text-blue-300">
               {badges.length}
             </span>
           )}
         </h2>
 
         {badges.length === 0 ? (
-          <p className="text-sm text-gray-400">
+          <p className="text-sm text-gray-400 dark:text-gray-500">
             Complete exercises to earn your first badge!
           </p>
         ) : (
@@ -93,15 +93,15 @@ export default function GamificationPanel() {
               <li
                 key={badge.type}
                 title={badge.description}
-                className="flex flex-col items-center gap-1.5 rounded-xl border border-gray-100 bg-gray-50 px-3 py-4 text-center"
+                className="flex flex-col items-center gap-1.5 rounded-xl border border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-800 px-3 py-4 text-center"
               >
                 <span className="text-3xl" aria-hidden="true">
                   {badge.emoji}
                 </span>
-                <span className="text-xs font-semibold text-gray-800">
+                <span className="text-xs font-semibold text-gray-800 dark:text-gray-200">
                   {badge.label}
                 </span>
-                <span className="text-xs text-gray-400">
+                <span className="text-xs text-gray-400 dark:text-gray-500">
                   {new Date(badge.earned_at).toLocaleDateString()}
                 </span>
               </li>

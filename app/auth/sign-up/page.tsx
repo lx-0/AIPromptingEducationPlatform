@@ -43,17 +43,17 @@ export default function SignUpPage() {
   }
 
   return (
-    <main id="main-content" className="flex min-h-screen items-center justify-center bg-gray-50 px-4">
+    <main id="main-content" className="flex min-h-screen items-center justify-center bg-gray-50 dark:bg-gray-950 px-4">
       <div className="w-full max-w-md space-y-6">
         <div className="text-center">
-          <h1 className="text-3xl font-bold tracking-tight text-gray-900">
+          <h1 className="text-3xl font-bold tracking-tight text-gray-900 dark:text-gray-100">
             Create an account
           </h1>
-          <p className="mt-2 text-sm text-gray-600">
+          <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
             Already have an account?{" "}
             <Link
               href="/auth/sign-in"
-              className="font-medium text-blue-600 hover:text-blue-500"
+              className="font-medium text-blue-600 hover:text-blue-500 dark:text-blue-400"
             >
               Sign in
             </Link>
@@ -62,10 +62,10 @@ export default function SignUpPage() {
 
         <form
           onSubmit={handleSubmit}
-          className="space-y-4 rounded-xl bg-white p-8 shadow"
+          className="space-y-4 rounded-xl bg-white dark:bg-gray-900 p-8 shadow dark:shadow-gray-800"
         >
           {error && (
-            <div role="alert" aria-live="polite" className="rounded-md bg-red-50 p-3 text-sm text-red-700">
+            <div role="alert" aria-live="polite" className="rounded-md bg-red-50 dark:bg-red-950 p-3 text-sm text-red-700 dark:text-red-300">
               {error}
             </div>
           )}
@@ -73,7 +73,7 @@ export default function SignUpPage() {
           <div>
             <label
               htmlFor="displayName"
-              className="block text-sm font-medium text-gray-700"
+              className="block text-sm font-medium text-gray-700 dark:text-gray-300"
             >
               Display name
             </label>
@@ -83,14 +83,14 @@ export default function SignUpPage() {
               required
               value={displayName}
               onChange={(e) => setDisplayName(e.target.value)}
-              className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2.5 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              className="mt-1 block w-full rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-3 py-2.5 text-sm text-gray-900 dark:text-gray-100 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
             />
           </div>
 
           <div>
             <label
               htmlFor="email"
-              className="block text-sm font-medium text-gray-700"
+              className="block text-sm font-medium text-gray-700 dark:text-gray-300"
             >
               Email
             </label>
@@ -100,14 +100,14 @@ export default function SignUpPage() {
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2.5 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              className="mt-1 block w-full rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-3 py-2.5 text-sm text-gray-900 dark:text-gray-100 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
             />
           </div>
 
           <div>
             <label
               htmlFor="password"
-              className="block text-sm font-medium text-gray-700"
+              className="block text-sm font-medium text-gray-700 dark:text-gray-300"
             >
               Password
             </label>
@@ -118,20 +118,20 @@ export default function SignUpPage() {
               minLength={8}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2.5 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              className="mt-1 block w-full rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-3 py-2.5 text-sm text-gray-900 dark:text-gray-100 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
             />
           </div>
 
           <fieldset>
-            <legend className="block text-sm font-medium text-gray-700">I am a…</legend>
+            <legend className="block text-sm font-medium text-gray-700 dark:text-gray-300">I am a…</legend>
             <div className="mt-2 flex gap-4">
               {(["trainee", "instructor"] as const).map((r) => (
                 <label
                   key={r}
                   className={`flex flex-1 cursor-pointer items-center justify-center rounded-md border px-4 py-3 text-sm font-medium capitalize transition-colors ${
                     role === r
-                      ? "border-blue-600 bg-blue-50 text-blue-700"
-                      : "border-gray-300 text-gray-700 hover:bg-gray-50"
+                      ? "border-blue-600 bg-blue-50 dark:bg-blue-950 text-blue-700 dark:text-blue-300"
+                      : "border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800"
                   }`}
                 >
                   <input

@@ -3,6 +3,8 @@ import Link from "next/link";
 import { getSession } from "@/lib/session";
 import pool from "@/lib/db";
 import ExerciseForm from "@/components/ExerciseForm";
+import ThemeToggle from "@/components/ThemeToggle";
+
 
 type Exercise = {
   id: string;
@@ -65,36 +67,39 @@ export default async function EditExercisePage({
   }));
 
   return (
-    <main className="min-h-screen bg-gray-50">
-      <nav className="bg-white shadow-sm">
+    <main className="min-h-screen bg-gray-50 dark:bg-gray-950">
+      <nav className="bg-white dark:bg-gray-900 shadow-sm dark:shadow-gray-800">
         <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-3">
           <Link
             href="/dashboard"
-            className="text-lg font-semibold text-gray-900 hover:text-gray-700"
+            className="text-lg font-semibold text-gray-900 dark:text-gray-100 hover:text-gray-700 dark:hover:text-gray-300"
           >
             PromptingSchool
           </Link>
-          <form action="/auth/sign-out" method="POST">
-            <button
-              type="submit"
-              className="text-sm text-gray-600 hover:text-gray-900"
-            >
-              Sign out
-            </button>
-          </form>
+          <div className="flex items-center gap-3">
+            <ThemeToggle />
+            <form action="/auth/sign-out" method="POST">
+              <button
+                type="submit"
+                className="text-sm text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100"
+              >
+                Sign out
+              </button>
+            </form>
+          </div>
         </div>
       </nav>
 
       <div className="mx-auto max-w-3xl px-4 py-10">
-        <div className="mb-2 flex gap-2 text-sm text-blue-600">
+        <div className="mb-2 flex gap-2 text-sm text-blue-600 dark:text-blue-400">
           <Link href="/workshops" className="hover:underline">
             Workshops
           </Link>
-          <span className="text-gray-400">/</span>
+          <span className="text-gray-400 dark:text-gray-600">/</span>
           <Link href={`/workshops/${id}`} className="hover:underline">
             {workshop.title}
           </Link>
-          <span className="text-gray-400">/</span>
+          <span className="text-gray-400 dark:text-gray-600">/</span>
           <Link
             href={`/workshops/${id}/exercises/${exerciseId}`}
             className="hover:underline"
@@ -103,9 +108,9 @@ export default async function EditExercisePage({
           </Link>
         </div>
 
-        <h1 className="mb-8 text-2xl font-bold text-gray-900">Edit exercise</h1>
+        <h1 className="mb-8 text-2xl font-bold text-gray-900 dark:text-gray-100">Edit exercise</h1>
 
-        <div className="rounded-xl border border-gray-200 bg-white p-6">
+        <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-6">
           <ExerciseForm
             workshopId={id}
             exerciseId={exerciseId}

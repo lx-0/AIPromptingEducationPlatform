@@ -99,13 +99,13 @@ export default function ExerciseForm({
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       {error && (
-        <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+        <div className="rounded-lg border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-950 px-4 py-3 text-sm text-red-700 dark:text-red-300">
           {error}
         </div>
       )}
 
       <div>
-        <label className="mb-1.5 block text-sm font-medium text-gray-700">
+        <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300">
           Title <span className="text-red-500">*</span>
         </label>
         <input
@@ -113,12 +113,12 @@ export default function ExerciseForm({
           value={title}
           onChange={(e) => setTitle(e.target.value)}
           placeholder="e.g. Write a customer support prompt"
-          className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-400 focus:outline-none"
+          className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 px-3 py-2 text-sm focus:border-blue-400 focus:outline-none"
         />
       </div>
 
       <div>
-        <label className="mb-1.5 block text-sm font-medium text-gray-700">
+        <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300">
           Instructions <span className="text-red-500">*</span>
         </label>
         <textarea
@@ -126,28 +126,28 @@ export default function ExerciseForm({
           onChange={(e) => setInstructions(e.target.value)}
           rows={5}
           placeholder="Describe what the trainee should do..."
-          className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-400 focus:outline-none"
+          className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 px-3 py-2 text-sm focus:border-blue-400 focus:outline-none"
         />
       </div>
 
       <div>
-        <label className="mb-1.5 block text-sm font-medium text-gray-700">
+        <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300">
           System prompt{" "}
-          <span className="text-xs font-normal text-gray-400">(optional)</span>
+          <span className="text-xs font-normal text-gray-400 dark:text-gray-500">(optional)</span>
         </label>
         <textarea
           value={systemPrompt}
           onChange={(e) => setSystemPrompt(e.target.value)}
           rows={3}
           placeholder="System prompt for the AI model (if any)..."
-          className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-400 focus:outline-none"
+          className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 px-3 py-2 text-sm focus:border-blue-400 focus:outline-none"
         />
       </div>
 
       <div>
-        <label className="mb-1.5 block text-sm font-medium text-gray-700">
+        <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300">
           Sort order{" "}
-          <span className="text-xs font-normal text-gray-400">
+          <span className="text-xs font-normal text-gray-400 dark:text-gray-500">
             (lower numbers appear first)
           </span>
         </label>
@@ -155,15 +155,15 @@ export default function ExerciseForm({
           type="number"
           value={sortOrder}
           onChange={(e) => setSortOrder(parseInt(e.target.value) || 0)}
-          className="w-28 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-400 focus:outline-none"
+          className="w-28 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 px-3 py-2 text-sm focus:border-blue-400 focus:outline-none"
         />
       </div>
 
       <div>
-        <label className="mb-2 block text-sm font-medium text-gray-700">
+        <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
           Rubric criteria <span className="text-red-500">*</span>
         </label>
-        <p className="mb-3 text-xs text-gray-500">
+        <p className="mb-3 text-xs text-gray-500 dark:text-gray-400">
           Define the criteria used to evaluate trainee submissions. Each
           criterion will be scored by AI.
         </p>
@@ -187,7 +187,7 @@ export default function ExerciseForm({
         <button
           type="button"
           onClick={() => router.push(`/workshops/${workshopId}`)}
-          className="rounded-lg border border-gray-200 px-5 py-2 text-sm font-medium text-gray-700 hover:border-gray-300 transition-colors"
+          className="rounded-lg border border-gray-200 dark:border-gray-700 px-5 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:border-gray-300 dark:hover:border-gray-500 transition-colors"
         >
           Cancel
         </button>

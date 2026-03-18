@@ -1,6 +1,18 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+
+function useDark() {
+  const [dark, setDark] = useState(false);
+  useEffect(() => {
+    const check = () => setDark(document.documentElement.classList.contains("dark"));
+    check();
+    const observer = new MutationObserver(check);
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ["class"] });
+    return () => observer.disconnect();
+  }, []);
+  return dark;
+}
 
 export type SubmissionTrendPoint = {
   date: string;
@@ -57,12 +69,14 @@ function BarChart({
   getColor,
   formatValue = (v) => String(v),
   formatLabel = (l) => l,
+  dark = false,
 }: {
   data: { label: string; value: number }[];
   label: string;
   getColor?: (index: number, value: number) => string;
   formatValue?: (v: number) => string;
   formatLabel?: (l: string) => string;
+  dark?: boolean;
 }) {
   const maxVal = Math.max(...data.map((d) => d.value), 1);
   const width = 100; // percent-based
@@ -71,6 +85,9 @@ function BarChart({
     (width / data.length) * 0.65
   );
   const spacing = width / data.length;
+  const gridColor = dark ? "#374151" : "#e5e7eb";
+  const tickColor = dark ? "#6b7280" : "#9ca3af";
+  const labelColor = dark ? "#9ca3af" : "#6b7280";
 
   return (
     <div className="w-full overflow-x-auto">
@@ -90,10 +107,10 @@ function BarChart({
                 x2={390}
                 y1={y}
                 y2={y}
-                stroke="#e5e7eb"
+                stroke={gridColor}
                 strokeWidth={1}
               />
-              <text x={24} y={y + 4} fontSize={9} fill="#9ca3af" textAnchor="end">
+              <text x={24} y={y + 4} fontSize={9} fill={tickColor} textAnchor="end">
                 {formatValue(Math.round(tick * maxVal))}
               </text>
             </g>
@@ -130,7 +147,7 @@ function BarChart({
                 x={x + 18}
                 y={CHART_H + 14}
                 fontSize={9}
-                fill="#6b7280"
+                fill={labelColor}
                 textAnchor="middle"
               >
                 {formatLabel(d.label)}
@@ -150,17 +167,21 @@ function HBarChart({
   maxValue = 100,
   formatValue = (v) => String(v),
   getColor,
+  dark = false,
 }: {
   data: { label: string; value: number }[];
   label: string;
   maxValue?: number;
   formatValue?: (v: number) => string;
   getColor?: (value: number) => string;
+  dark?: boolean;
 }) {
   const rowH = 32;
   const labelW = 150;
   const barAreaW = 210;
   const totalH = data.length * rowH + 10;
+  const textColor = dark ? "#d1d5db" : "#374151";
+  const valueColor = dark ? "#9ca3af" : "#6b7280";
 
   return (
     <div className="w-full overflow-x-auto">
@@ -189,7 +210,7 @@ function HBarChart({
                 x={labelW - 6}
                 y={y + 4}
                 fontSize={10}
-                fill="#374151"
+                fill={textColor}
                 textAnchor="end"
               >
                 {truncLabel}
@@ -207,7 +228,7 @@ function HBarChart({
                 x={labelW + barW + 6}
                 y={y + 4}
                 fontSize={10}
-                fill="#6b7280"
+                fill={valueColor}
               >
                 {formatValue(d.value)}
               </text>
@@ -223,9 +244,11 @@ function HBarChart({
 function LineChart({
   data,
   label,
+  dark = false,
 }: {
   data: { label: string; value: number }[];
   label: string;
+  dark?: boolean;
 }) {
   const maxVal = Math.max(...data.map((d) => d.value), 1);
   const w = 360;
@@ -233,6 +256,8 @@ function LineChart({
   const pad = { l: 34, r: 10, t: 10, b: 30 };
   const innerW = w - pad.l - pad.r;
   const innerH = h - pad.t - pad.b;
+  const gridColor = dark ? "#374151" : "#e5e7eb";
+  const tickColor = dark ? "#6b7280" : "#9ca3af";
 
   const pts = data.map((d, i) => ({
     x: pad.l + (i / Math.max(data.length - 1, 1)) * innerW,
@@ -275,10 +300,10 @@ function LineChart({
                 x2={pad.l + innerW}
                 y1={y}
                 y2={y}
-                stroke="#e5e7eb"
+                stroke={gridColor}
                 strokeWidth={1}
               />
-              <text x={pad.l - 4} y={y + 4} fontSize={9} fill="#9ca3af" textAnchor="end">
+              <text x={pad.l - 4} y={y + 4} fontSize={9} fill={tickColor} textAnchor="end">
                 {Math.round(tick * maxVal)}
               </text>
             </g>
@@ -311,7 +336,7 @@ function LineChart({
                 x={p.x}
                 y={pad.t + innerH + 20}
                 fontSize={8}
-                fill="#9ca3af"
+                fill={tickColor}
                 textAnchor="middle"
               >
                 {new Date(p.label).toLocaleDateString(undefined, {
@@ -336,6 +361,7 @@ export default function AnalyticsCharts({
   leaderboard,
 }: Props) {
   const [anonymized, setAnonymized] = useState(false);
+  const dark = useDark();
 
   // Group rubric weaknesses by exercise
   const rubricByExercise = rubricWeaknesses.reduce<
@@ -355,13 +381,14 @@ export default function AnalyticsCharts({
       {/* Submissions over time */}
       {submissionTrend.length > 1 && (
         <section>
-          <h2 className="text-base font-semibold text-gray-900 mb-3">
+          <h2 className="text-base font-semibold text-gray-900 dark:text-gray-100 mb-3">
             Submissions over time
           </h2>
-          <div className="rounded-xl border border-gray-200 bg-white p-4">
+          <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-4">
             <LineChart
               data={submissionTrend.map((d) => ({ label: d.date, value: d.count }))}
               label="Submissions over time line chart"
+              dark={dark}
             />
           </div>
         </section>
@@ -370,10 +397,10 @@ export default function AnalyticsCharts({
       {/* Score distribution */}
       {scoreDistribution.some((d) => d.count > 0) && (
         <section>
-          <h2 className="text-base font-semibold text-gray-900 mb-3">
+          <h2 className="text-base font-semibold text-gray-900 dark:text-gray-100 mb-3">
             Score distribution
           </h2>
-          <div className="rounded-xl border border-gray-200 bg-white p-4">
+          <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-4">
             <BarChart
               data={scoreDistribution.map((d) => ({
                 label: d.bucket,
@@ -381,6 +408,7 @@ export default function AnalyticsCharts({
               }))}
               label="Score distribution bar chart"
               getColor={(i) => BUCKET_COLORS[i % BUCKET_COLORS.length]}
+              dark={dark}
             />
           </div>
         </section>
@@ -389,10 +417,10 @@ export default function AnalyticsCharts({
       {/* Per-exercise avg scores */}
       {hasScores && (
         <section>
-          <h2 className="text-base font-semibold text-gray-900 mb-3">
+          <h2 className="text-base font-semibold text-gray-900 dark:text-gray-100 mb-3">
             Avg score by exercise
           </h2>
-          <div className="rounded-xl border border-gray-200 bg-white p-4">
+          <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-4">
             <HBarChart
               data={exerciseStats.map((e) => ({
                 label: e.exercise_title,
@@ -404,6 +432,7 @@ export default function AnalyticsCharts({
               getColor={(v) =>
                 v < 50 ? "#ef4444" : v < 75 ? "#f97316" : "#22c55e"
               }
+              dark={dark}
             />
           </div>
         </section>
@@ -412,7 +441,7 @@ export default function AnalyticsCharts({
       {/* Rubric weaknesses per exercise */}
       {Object.keys(rubricByExercise).length > 0 && (
         <section>
-          <h2 className="text-base font-semibold text-gray-900 mb-3">
+          <h2 className="text-base font-semibold text-gray-900 dark:text-gray-100 mb-3">
             Rubric criterion breakdown
           </h2>
           <div className="space-y-4">
@@ -420,9 +449,9 @@ export default function AnalyticsCharts({
               ([exId, { title, criteria }]) => (
                 <div
                   key={exId}
-                  className="rounded-xl border border-gray-200 bg-white p-4"
+                  className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-4"
                 >
-                  <p className="text-sm font-medium text-gray-700 mb-3">
+                  <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
                     {title}
                   </p>
                   <HBarChart
@@ -436,6 +465,7 @@ export default function AnalyticsCharts({
                     getColor={(v) =>
                       v < 50 ? "#ef4444" : v < 75 ? "#f97316" : "#22c55e"
                     }
+                    dark={dark}
                   />
                 </div>
               )
@@ -448,61 +478,61 @@ export default function AnalyticsCharts({
       {leaderboard.length > 0 && (
         <section>
           <div className="flex items-center justify-between mb-3">
-            <h2 className="text-base font-semibold text-gray-900">
+            <h2 className="text-base font-semibold text-gray-900 dark:text-gray-100">
               Trainee leaderboard
             </h2>
-            <label className="flex items-center gap-2 text-sm text-gray-600 cursor-pointer">
+            <label className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400 cursor-pointer">
               <input
                 type="checkbox"
                 checked={anonymized}
                 onChange={(e) => setAnonymized(e.target.checked)}
-                className="h-4 w-4 rounded border-gray-300 text-blue-600"
+                className="h-4 w-4 rounded border-gray-300 dark:border-gray-600 text-blue-600"
               />
               Anonymize names
             </label>
           </div>
-          <div className="overflow-x-auto rounded-xl border border-gray-200 bg-white">
+          <div className="overflow-x-auto rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900">
             <table className="w-full text-sm min-w-[400px]">
               <thead>
-                <tr className="border-b border-gray-200 bg-gray-50">
-                  <th className="px-4 py-3 text-left font-medium text-gray-600">
+                <tr className="border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800">
+                  <th className="px-4 py-3 text-left font-medium text-gray-600 dark:text-gray-400">
                     Rank
                   </th>
-                  <th className="px-4 py-3 text-left font-medium text-gray-600">
+                  <th className="px-4 py-3 text-left font-medium text-gray-600 dark:text-gray-400">
                     Trainee
                   </th>
-                  <th className="px-4 py-3 text-right font-medium text-gray-600">
+                  <th className="px-4 py-3 text-right font-medium text-gray-600 dark:text-gray-400">
                     Exercises scored
                   </th>
-                  <th className="px-4 py-3 text-right font-medium text-gray-600">
+                  <th className="px-4 py-3 text-right font-medium text-gray-600 dark:text-gray-400">
                     Avg score
                   </th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100">
+              <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
                 {leaderboard.map((entry, index) => (
-                  <tr key={entry.trainee_id} className="hover:bg-gray-50">
-                    <td className="px-4 py-3 text-gray-400 font-medium">
+                  <tr key={entry.trainee_id} className="hover:bg-gray-50 dark:hover:bg-gray-800">
+                    <td className="px-4 py-3 text-gray-400 dark:text-gray-500 font-medium">
                       {index + 1}
                     </td>
-                    <td className="px-4 py-3 font-medium text-gray-900">
+                    <td className="px-4 py-3 font-medium text-gray-900 dark:text-gray-100">
                       {anonymized
                         ? `Trainee ${index + 1}`
                         : entry.display_name}
                     </td>
-                    <td className="px-4 py-3 text-right text-gray-700">
+                    <td className="px-4 py-3 text-right text-gray-700 dark:text-gray-300">
                       {entry.exercises_completed}
                     </td>
                     <td className="px-4 py-3 text-right">
                       <span
                         className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
                           entry.avg_score_pct >= 80
-                            ? "bg-green-50 text-green-700"
+                            ? "bg-green-50 dark:bg-green-950 text-green-700 dark:text-green-300"
                             : entry.avg_score_pct >= 60
-                            ? "bg-blue-50 text-blue-700"
+                            ? "bg-blue-50 dark:bg-blue-950 text-blue-700 dark:text-blue-300"
                             : entry.avg_score_pct >= 40
-                            ? "bg-yellow-50 text-yellow-700"
-                            : "bg-red-50 text-red-700"
+                            ? "bg-yellow-50 dark:bg-yellow-950 text-yellow-700 dark:text-yellow-300"
+                            : "bg-red-50 dark:bg-red-950 text-red-700 dark:text-red-300"
                         }`}
                       >
                         {entry.avg_score_pct}%
@@ -521,7 +551,7 @@ export default function AnalyticsCharts({
         <a
           href={`/api/workshops/${workshopId}/analytics`}
           download
-          className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 hover:border-blue-300 hover:text-blue-700 transition-colors"
+          className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-4 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-300 hover:border-blue-300 dark:hover:border-blue-600 hover:text-blue-700 dark:hover:text-blue-400 transition-colors"
         >
           Export analytics CSV
         </a>
