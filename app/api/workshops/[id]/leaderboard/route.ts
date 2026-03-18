@@ -63,5 +63,8 @@ export async function GET(
     rank: idx + 1,
   }));
 
-  return NextResponse.json({ leaderboard: rows, currentUserId: session.userId });
+  return NextResponse.json(
+    { leaderboard: rows, currentUserId: session.userId },
+    { headers: { "Cache-Control": "private, max-age=60, stale-while-revalidate=30" } }
+  );
 }

@@ -1,9 +1,15 @@
 import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
+import dynamic from "next/dynamic";
 import { getSession } from "@/lib/session";
 import pool from "@/lib/db";
-import PublishPanel from "./PublishPanel";
 import ThemeToggle from "@/components/ThemeToggle";
+
+const PublishPanel = dynamic(() => import("./PublishPanel"), {
+  loading: () => (
+    <div className="mt-6 h-24 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 animate-pulse" />
+  ),
+});
 
 type Exercise = {
   id: string;

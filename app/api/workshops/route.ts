@@ -13,7 +13,9 @@ export async function GET() {
     "SELECT * FROM workshops ORDER BY created_at DESC"
   );
 
-  return NextResponse.json(result.rows);
+  return NextResponse.json(result.rows, {
+    headers: { "Cache-Control": "private, max-age=60, stale-while-revalidate=30" },
+  });
 }
 
 export async function POST(request: Request) {

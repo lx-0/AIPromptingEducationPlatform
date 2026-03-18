@@ -43,5 +43,8 @@ export async function GET() {
     last_sub_date: null,
   };
 
-  return NextResponse.json({ badges, streak });
+  return NextResponse.json(
+    { badges, streak },
+    { headers: { "Cache-Control": "private, max-age=120, stale-while-revalidate=60" } }
+  );
 }
