@@ -217,7 +217,7 @@ export default async function DashboardPage() {
                 <h2 className="text-lg font-semibold text-gray-900">My workshops</h2>
                 <Link
                   href="/workshops/new"
-                  className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 transition-colors"
+                  className="rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-blue-700 transition-colors"
                 >
                   + Create workshop
                 </Link>

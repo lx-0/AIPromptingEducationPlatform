@@ -131,9 +131,9 @@ export default async function WorkshopDetailPage({
           </Link>
         </div>
 
-        <div className="flex items-start justify-between">
-          <div>
-            <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-start gap-3">
+          <div className="flex-1 min-w-0">
+            <div className="flex flex-wrap items-center gap-2">
               <h1 className="text-2xl font-bold text-gray-900">{workshop.title}</h1>
               <WorkshopStatusBadge status={workshop.status} />
             </div>
@@ -144,7 +144,7 @@ export default async function WorkshopDetailPage({
           {isOwner && (
             <Link
               href={`/workshops/${id}/submissions`}
-              className="shrink-0 rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:border-blue-300 hover:text-blue-700 transition-colors"
+              className="shrink-0 rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 hover:border-blue-300 hover:text-blue-700 transition-colors"
             >
               View submissions →
             </Link>
@@ -166,7 +166,7 @@ export default async function WorkshopDetailPage({
             <h2 className="text-lg font-semibold text-gray-900 mb-4">Analytics</h2>
 
             {/* Summary cards */}
-            <div className="grid grid-cols-3 gap-4 mb-6">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
               <div className="rounded-xl border border-gray-200 bg-white px-6 py-5">
                 <p className="text-xs font-medium uppercase tracking-wide text-gray-500">Total submissions</p>
                 <p className="mt-1 text-3xl font-bold text-gray-900">{workshopStats.total_submissions}</p>
@@ -190,8 +190,8 @@ export default async function WorkshopDetailPage({
 
             {/* Per-exercise stats */}
             {exerciseStats.length > 0 && (
-              <div className="overflow-hidden rounded-xl border border-gray-200 bg-white">
-                <table className="w-full text-sm">
+              <div className="overflow-x-auto rounded-xl border border-gray-200 bg-white">
+                <table className="w-full text-sm min-w-[500px]">
                   <thead>
                     <tr className="border-b border-gray-200 bg-gray-50">
                       <th className="px-4 py-3 text-left font-medium text-gray-600">#</th>

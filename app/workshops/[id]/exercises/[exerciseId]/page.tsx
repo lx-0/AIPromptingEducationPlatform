@@ -64,14 +64,14 @@ export default async function ExercisePage({
           <Link href={`/workshops/${id}`} className="hover:underline">Workshop</Link>
         </div>
 
-        <div className="mb-8 flex items-start justify-between gap-4">
-          <h1 className="text-2xl font-bold text-gray-900">
+        <div className="mb-8 flex flex-wrap items-start gap-3">
+          <h1 className="flex-1 min-w-0 text-2xl font-bold text-gray-900">
             {exercise.title}
           </h1>
           {isOwner && (
             <Link
               href={`/workshops/${id}/exercises/${exerciseId}/edit`}
-              className="shrink-0 rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:border-blue-300 hover:text-blue-700 transition-colors"
+              className="shrink-0 rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 hover:border-blue-300 hover:text-blue-700 transition-colors"
             >
               Edit exercise
             </Link>

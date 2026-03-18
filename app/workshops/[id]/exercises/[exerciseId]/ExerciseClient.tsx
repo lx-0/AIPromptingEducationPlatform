@@ -354,7 +354,7 @@ export default function ExerciseClient({ exercise, workshopId }: Props) {
           <button
             type="submit"
             disabled={loading || !prompt.trim()}
-            className="rounded-lg bg-blue-600 px-6 py-2.5 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            className="w-full sm:w-auto rounded-lg bg-blue-600 px-6 py-3 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
             {loading ? "Running…" : history.length > 0 ? "Submit attempt" : "Submit prompt"}
           </button>
