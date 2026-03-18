@@ -116,7 +116,7 @@ export default function WorkshopDiscovery({
       </div>
 
       {error && (
-        <div className="mt-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+        <div role="alert" aria-live="polite" className="mt-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
           {error}
         </div>
       )}
@@ -146,7 +146,7 @@ export default function WorkshopDiscovery({
               <li key={workshop.id} className="flex flex-col rounded-xl border border-gray-200 bg-white shadow-sm hover:shadow-md transition-shadow">
                 <Link
                   href={`/workshops/${workshop.id}`}
-                  className="flex flex-1 flex-col p-5"
+                  className="flex flex-1 flex-col p-5 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-inset rounded-t-xl"
                 >
                   <h2 className="text-base font-semibold text-gray-900 leading-snug line-clamp-2">
                     {workshop.title}

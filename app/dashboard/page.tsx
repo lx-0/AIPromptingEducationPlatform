@@ -183,8 +183,8 @@ export default async function DashboardPage() {
   }
 
   return (
-    <main className="min-h-screen bg-gray-50">
-      <nav className="bg-white shadow-sm">
+    <main id="main-content" className="min-h-screen bg-gray-50">
+      <nav aria-label="Main navigation" className="bg-white shadow-sm">
         <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-3">
           <span className="text-lg font-semibold text-gray-900">
             PromptingSchool
@@ -239,7 +239,7 @@ export default async function DashboardPage() {
                     <li key={w.id}>
                       <Link
                         href={`/workshops/${w.id}`}
-                        className="flex items-center gap-4 rounded-xl border border-gray-200 bg-white px-6 py-4 hover:border-blue-300 hover:shadow-sm transition-all"
+                        className="flex items-center gap-4 rounded-xl border border-gray-200 bg-white px-6 py-4 hover:border-blue-300 hover:shadow-sm transition-all focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
                       >
                         <div className="min-w-0 flex-1">
                           <p className="font-semibold text-gray-900 truncate">{w.title}</p>
@@ -262,7 +262,7 @@ export default async function DashboardPage() {
           {session.role === "trainee" && (
             <Link
               href="/workshops"
-              className="block rounded-xl border border-gray-200 bg-white p-6 hover:border-blue-300 hover:shadow-sm transition-all text-center"
+              className="block rounded-xl border border-gray-200 bg-white p-6 hover:border-blue-300 hover:shadow-sm transition-all text-center focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
             >
               <p className="text-sm font-semibold text-blue-600">Browse workshops →</p>
               <p className="mt-1 text-xs text-gray-500">View available workshops and start practising prompts.</p>
@@ -322,7 +322,7 @@ export default async function DashboardPage() {
                             <li key={ex.exercise_id}>
                               <Link
                                 href={`/workshops/${workshop.id}/exercises/${ex.exercise_id}`}
-                                className="flex items-center gap-3 px-5 py-3 hover:bg-gray-50 transition-colors"
+                                className="flex items-center gap-3 px-5 py-3 hover:bg-gray-50 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-inset"
                               >
                                 {/* Status icon */}
                                 <StatusBadge status={ex.status} />

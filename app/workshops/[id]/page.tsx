@@ -110,8 +110,8 @@ export default async function WorkshopDetailPage({
       : null;
 
   return (
-    <main className="min-h-screen bg-gray-50">
-      <nav className="bg-white shadow-sm">
+    <main id="main-content" className="min-h-screen bg-gray-50">
+      <nav aria-label="Main navigation" className="bg-white shadow-sm">
         <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-3">
           <Link href="/dashboard" className="text-lg font-semibold text-gray-900 hover:text-gray-700">
             PromptingSchool
@@ -258,7 +258,7 @@ export default async function WorkshopDetailPage({
                   <div className="flex items-center gap-2">
                     <Link
                       href={`/workshops/${id}/exercises/${exercise.id}`}
-                      className="flex flex-1 items-center gap-4 rounded-xl border border-gray-200 bg-white px-6 py-4 hover:border-blue-300 hover:shadow-sm transition-all"
+                      className="flex flex-1 items-center gap-4 rounded-xl border border-gray-200 bg-white px-6 py-4 hover:border-blue-300 hover:shadow-sm transition-all focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
                     >
                       <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-blue-50 text-sm font-semibold text-blue-700">
                         {index + 1}

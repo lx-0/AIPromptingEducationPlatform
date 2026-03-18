@@ -43,8 +43,8 @@ export default async function ExercisePage({
     exercise.instructor_id === session.userId;
 
   return (
-    <main className="min-h-screen bg-gray-50">
-      <nav className="bg-white shadow-sm">
+    <main id="main-content" className="min-h-screen bg-gray-50">
+      <nav aria-label="Main navigation" className="bg-white shadow-sm">
         <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-3">
           <Link href="/dashboard" className="text-lg font-semibold text-gray-900 hover:text-gray-700">
             PromptingSchool
@@ -58,11 +58,15 @@ export default async function ExercisePage({
       </nav>
 
       <div className="mx-auto max-w-3xl px-4 py-10">
-        <div className="mb-2 flex gap-2 text-sm text-blue-600">
-          <Link href="/workshops" className="hover:underline">Workshops</Link>
-          <span className="text-gray-400">/</span>
-          <Link href={`/workshops/${id}`} className="hover:underline">Workshop</Link>
-        </div>
+        <nav aria-label="Breadcrumb" className="mb-2">
+          <ol className="flex items-center gap-1 text-sm text-blue-600">
+            <li><Link href="/workshops" className="hover:underline">Workshops</Link></li>
+            <li aria-hidden="true" className="text-gray-400">/</li>
+            <li><Link href={`/workshops/${id}`} className="hover:underline">Workshop</Link></li>
+            <li aria-hidden="true" className="text-gray-400">/</li>
+            <li aria-current="page" className="text-gray-500">{exercise.title}</li>
+          </ol>
+        </nav>
 
         <div className="mb-8 flex flex-wrap items-start gap-3">
           <h1 className="flex-1 min-w-0 text-2xl font-bold text-gray-900">

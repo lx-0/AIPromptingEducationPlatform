@@ -324,9 +324,10 @@ export default function ExerciseClient({ exercise, workshopId }: Props) {
 
       {/* Prompt submission */}
       <section ref={formRef} className="rounded-xl border border-gray-200 bg-white p-6">
-        <h2 className="text-base font-semibold text-gray-900 mb-4">Your prompt</h2>
+        <h2 id="prompt-label" className="text-base font-semibold text-gray-900 mb-4">Your prompt</h2>
         <form onSubmit={handleSubmit} className="space-y-4">
           <textarea
+            aria-labelledby="prompt-label"
             value={prompt}
             onChange={(e) => setPrompt(e.target.value)}
             rows={8}
@@ -335,7 +336,7 @@ export default function ExerciseClient({ exercise, workshopId }: Props) {
             className="w-full rounded-lg border border-gray-300 px-4 py-3 text-sm text-gray-900 placeholder-gray-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:opacity-60 resize-y font-mono"
           />
           {error && (
-            <div className="flex items-start gap-3 rounded-lg border border-red-200 bg-red-50 px-4 py-3">
+            <div role="alert" aria-live="polite" className="flex items-start gap-3 rounded-lg border border-red-200 bg-red-50 px-4 py-3">
               <svg className="mt-0.5 h-4 w-4 shrink-0 text-red-500" viewBox="0 0 20 20" fill="currentColor">
                 <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.28 7.22a.75.75 0 00-1.06 1.06L8.94 10l-1.72 1.72a.75.75 0 101.06 1.06L10 11.06l1.72 1.72a.75.75 0 101.06-1.06L11.06 10l1.72-1.72a.75.75 0 00-1.06-1.06L10 8.94 8.28 7.22z" clipRule="evenodd" />
               </svg>
@@ -354,6 +355,7 @@ export default function ExerciseClient({ exercise, workshopId }: Props) {
           <button
             type="submit"
             disabled={loading || !prompt.trim()}
+            aria-busy={loading}
             className="w-full sm:w-auto rounded-lg bg-blue-600 px-6 py-3 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
             {loading ? "Running…" : history.length > 0 ? "Submit attempt" : "Submit prompt"}
@@ -398,9 +400,14 @@ export default function ExerciseClient({ exercise, workshopId }: Props) {
               </span>
             )}
           </div>
-          <div className="rounded-lg bg-gray-50 p-4 text-sm text-gray-800 whitespace-pre-wrap font-mono min-h-[4rem]">
+          <div
+            aria-live="polite"
+            aria-label="AI response"
+            aria-busy={loading}
+            className="rounded-lg bg-gray-50 p-4 text-sm text-gray-800 whitespace-pre-wrap font-mono min-h-[4rem]"
+          >
             {streaming || currentSubmission?.llm_response || ""}
-            {loading && <span className="inline-block w-1.5 h-4 bg-blue-400 animate-pulse ml-0.5 align-middle" />}
+            {loading && <span className="inline-block w-1.5 h-4 bg-blue-400 motion-safe:animate-pulse ml-0.5 align-middle" />}
           </div>
         </section>
       )}

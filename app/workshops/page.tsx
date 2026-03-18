@@ -35,8 +35,8 @@ export default async function WorkshopsPage() {
   );
 
   return (
-    <main className="min-h-screen bg-gray-50">
-      <nav className="bg-white shadow-sm">
+    <main id="main-content" className="min-h-screen bg-gray-50">
+      <nav aria-label="Main navigation" className="bg-white shadow-sm">
         <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-3">
           <Link href="/dashboard" className="text-lg font-semibold text-gray-900 hover:text-gray-700">
             PromptingSchool

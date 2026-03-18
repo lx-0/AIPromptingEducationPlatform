@@ -43,7 +43,7 @@ export default function SignUpPage() {
   }
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-gray-50 px-4">
+    <main id="main-content" className="flex min-h-screen items-center justify-center bg-gray-50 px-4">
       <div className="w-full max-w-md space-y-6">
         <div className="text-center">
           <h1 className="text-3xl font-bold tracking-tight text-gray-900">
@@ -65,7 +65,7 @@ export default function SignUpPage() {
           className="space-y-4 rounded-xl bg-white p-8 shadow"
         >
           {error && (
-            <div className="rounded-md bg-red-50 p-3 text-sm text-red-700">
+            <div role="alert" aria-live="polite" className="rounded-md bg-red-50 p-3 text-sm text-red-700">
               {error}
             </div>
           )}
@@ -122,8 +122,8 @@ export default function SignUpPage() {
             />
           </div>
 
-          <div>
-            <p className="block text-sm font-medium text-gray-700">I am a…</p>
+          <fieldset>
+            <legend className="block text-sm font-medium text-gray-700">I am a…</legend>
             <div className="mt-2 flex gap-4">
               {(["trainee", "instructor"] as const).map((r) => (
                 <label
@@ -146,11 +146,12 @@ export default function SignUpPage() {
                 </label>
               ))}
             </div>
-          </div>
+          </fieldset>
 
           <button
             type="submit"
             disabled={loading}
+            aria-busy={loading}
             className="w-full rounded-md bg-blue-600 px-4 py-3 text-sm font-semibold text-white shadow hover:bg-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-60"
           >
             {loading ? "Creating account…" : "Create account"}
