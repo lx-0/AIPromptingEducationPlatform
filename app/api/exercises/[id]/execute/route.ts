@@ -3,6 +3,7 @@ import Anthropic from "@anthropic-ai/sdk";
 import pool from "@/lib/db";
 import { getSession } from "@/lib/session";
 import { scoreSubmission } from "@/lib/scorer";
+import { updateStreak, checkAndAwardBadges } from "@/lib/badges";
 
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
@@ -147,16 +148,43 @@ export async function POST(
 
         // Run AI judge scoring
         let score = null;
+        let newBadges: import("@/lib/badges").BadgeMeta[] = [];
+        let currentStreak = 0;
         try {
           score = await scoreSubmission(submissionId);
+
+          // Update streak and check for new badges (non-fatal)
+          try {
+            currentStreak = await updateStreak(session.userId);
+            if (score) {
+              const scorePct =
+                score.max_score > 0
+                  ? Math.round((score.total_score / score.max_score) * 100)
+                  : 0;
+              newBadges = await checkAndAwardBadges(
+                session.userId,
+                submissionId,
+                scorePct,
+                currentStreak
+              );
+            }
+          } catch {
+            // Gamification failure is non-fatal
+          }
         } catch {
           // Scoring failure is non-fatal; client can retry via POST /api/submissions/[id]/score
         }
 
-        // Send final message with submission id and score
+        // Send final message with submission id, score, and any new badges
         controller.enqueue(
           encoder.encode(
-            `data: ${JSON.stringify({ done: true, submissionId, score })}\n\n`
+            `data: ${JSON.stringify({
+              done: true,
+              submissionId,
+              score,
+              newBadges: newBadges.length > 0 ? newBadges : undefined,
+              currentStreak: currentStreak > 0 ? currentStreak : undefined,
+            })}\n\n`
           )
         );
       } catch (err) {

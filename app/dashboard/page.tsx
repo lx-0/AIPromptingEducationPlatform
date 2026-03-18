@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { getSession } from "@/lib/session";
 import pool from "@/lib/db";
+import GamificationPanel from "@/components/GamificationPanel";
 
 type InstructorWorkshop = {
   id: string;
@@ -267,6 +268,10 @@ export default async function DashboardPage() {
               <p className="text-sm font-semibold text-blue-600">Browse workshops →</p>
               <p className="mt-1 text-xs text-gray-500">View available workshops and start practising prompts.</p>
             </Link>
+          )}
+
+          {session.role === "trainee" && (
+            <GamificationPanel />
           )}
 
           {session.role === "trainee" && (

@@ -141,22 +141,30 @@ export default async function WorkshopDetailPage({
               <p className="mt-2 text-sm text-gray-600">{workshop.description}</p>
             )}
           </div>
-          {isOwner && (
-            <div className="flex flex-wrap gap-2">
-              <Link
-                href={`/workshops/${id}/analytics`}
-                className="shrink-0 rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 hover:border-blue-300 hover:text-blue-700 transition-colors"
-              >
-                Analytics →
-              </Link>
-              <Link
-                href={`/workshops/${id}/submissions`}
-                className="shrink-0 rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 hover:border-blue-300 hover:text-blue-700 transition-colors"
-              >
-                View submissions →
-              </Link>
-            </div>
-          )}
+          <div className="flex flex-wrap gap-2">
+            <Link
+              href={`/workshops/${id}/leaderboard`}
+              className="shrink-0 rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 hover:border-blue-300 hover:text-blue-700 transition-colors"
+            >
+              🏆 Leaderboard
+            </Link>
+            {isOwner && (
+              <>
+                <Link
+                  href={`/workshops/${id}/analytics`}
+                  className="shrink-0 rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 hover:border-blue-300 hover:text-blue-700 transition-colors"
+                >
+                  Analytics →
+                </Link>
+                <Link
+                  href={`/workshops/${id}/submissions`}
+                  className="shrink-0 rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 hover:border-blue-300 hover:text-blue-700 transition-colors"
+                >
+                  View submissions →
+                </Link>
+              </>
+            )}
+          </div>
         </div>
 
         {isOwner && (workshop.status === "draft" || workshop.status === "published") && (

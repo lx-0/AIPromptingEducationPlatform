@@ -95,3 +95,29 @@ CREATE TABLE enrollments (
 
 CREATE INDEX idx_enrollments_workshop_id ON enrollments (workshop_id);
 CREATE INDEX idx_enrollments_trainee_id  ON enrollments (trainee_id);
+
+-- ============================================================
+-- streaks
+-- Tracks consecutive submission-days per trainee (global).
+-- ============================================================
+CREATE TABLE streaks (
+  trainee_id      UUID  PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+  current_streak  INT   NOT NULL DEFAULT 0,
+  longest_streak  INT   NOT NULL DEFAULT 0,
+  last_sub_date   DATE,
+  updated_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- ============================================================
+-- user_badges
+-- One row per earned badge per trainee (unique per badge_type).
+-- ============================================================
+CREATE TABLE user_badges (
+  id          UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+  trainee_id  UUID        NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  badge_type  TEXT        NOT NULL,
+  earned_at   TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  UNIQUE (trainee_id, badge_type)
+);
+
+CREATE INDEX idx_user_badges_trainee_id ON user_badges (trainee_id);

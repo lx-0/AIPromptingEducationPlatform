@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import ReactMarkdown from "react-markdown";
 import { useToast } from "@/components/ToastProvider";
+import BadgeCelebration from "@/components/BadgeCelebration";
 
 type RubricCriterion = {
   criterion: string;
@@ -23,6 +24,13 @@ type Score = {
     criteria?: ScoreCriterion[];
     overall?: string;
   };
+};
+
+type BadgeMeta = {
+  type: string;
+  label: string;
+  description: string;
+  emoji: string;
 };
 
 type Submission = {
@@ -133,6 +141,7 @@ export default function ExerciseClient({ exercise, workshopId }: Props) {
   const [error, setError] = useState<string | null>(null);
   const [history, setHistory] = useState<Submission[]>([]);
   const [historyLoading, setHistoryLoading] = useState(true);
+  const [newBadges, setNewBadges] = useState<BadgeMeta[]>([]);
   const formRef = useRef<HTMLElement>(null);
 
   // Load attempt history on mount
@@ -209,6 +218,8 @@ export default function ExerciseClient({ exercise, workshopId }: Props) {
             error?: string;
             submissionId?: string;
             score?: Score;
+            newBadges?: BadgeMeta[];
+            currentStreak?: number;
           };
 
           if (parsed.text) {
@@ -229,6 +240,12 @@ export default function ExerciseClient({ exercise, workshopId }: Props) {
                 "success",
                 `Scored! ${total_score}/${max_score} pts (${max_score > 0 ? Math.round((total_score / max_score) * 100) : 0}%)`
               );
+            }
+            if (parsed.newBadges && parsed.newBadges.length > 0) {
+              setNewBadges(parsed.newBadges);
+            }
+            if (parsed.currentStreak && parsed.currentStreak >= 3) {
+              addToast("success", `🔥 ${parsed.currentStreak}-day streak!`);
             }
           }
           if (parsed.error) {
@@ -272,6 +289,14 @@ export default function ExerciseClient({ exercise, workshopId }: Props) {
 
   return (
     <div className="space-y-8">
+      {/* Badge celebration overlay */}
+      {newBadges.length > 0 && (
+        <BadgeCelebration
+          badges={newBadges}
+          onDismiss={() => setNewBadges([])}
+        />
+      )}
+
       {/* Instructions */}
       <section className="rounded-xl border border-gray-200 bg-white p-6">
         <h2 className="text-base font-semibold text-gray-900 mb-4">Instructions</h2>
