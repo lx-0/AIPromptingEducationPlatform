@@ -204,6 +204,7 @@ export default function ExerciseClient({ exercise, workshopId }: Props) {
 
           const parsed = JSON.parse(json) as {
             text?: string;
+            scoring?: boolean;
             done?: boolean;
             error?: string;
             submissionId?: string;
@@ -214,6 +215,9 @@ export default function ExerciseClient({ exercise, workshopId }: Props) {
             thisChunkHadText = true;
             accumulated += parsed.text;
             setStreaming(accumulated);
+          }
+          if (parsed.scoring) {
+            setLoadingPhase("scoring");
           }
           if (parsed.done) {
             submissionId = parsed.submissionId ?? null;
@@ -230,11 +234,6 @@ export default function ExerciseClient({ exercise, workshopId }: Props) {
           if (parsed.error) {
             throw new Error(parsed.error);
           }
-        }
-
-        // Once we have text but this chunk had none, the LLM is done — scoring is in progress
-        if (accumulated.length > 0 && !thisChunkHadText) {
-          setLoadingPhase("scoring");
         }
       }
 
@@ -364,18 +363,29 @@ export default function ExerciseClient({ exercise, workshopId }: Props) {
       </section>
 
       {/* Loading state — shown while waiting for the first streamed token */}
-      {loading && streaming === "" && (
+      {loading && streaming === "" && loadingPhase === "executing" && (
         <section className="rounded-xl border border-blue-100 bg-blue-50 p-6">
           <div className="flex items-center gap-3">
             <LoadingSpinner className="h-5 w-5 text-blue-500" />
             <div>
-              <p className="text-sm font-semibold text-blue-800">
-                {loadingPhase === "executing" ? "Running your prompt…" : "Scoring your response…"}
-              </p>
+              <p className="text-sm font-semibold text-blue-800">Running your prompt…</p>
               <p className="text-xs text-blue-600 mt-0.5">
-                {loadingPhase === "executing"
-                  ? "Sending your prompt to the AI model. This may take a few seconds."
-                  : "AI judge is evaluating your response against the rubric."}
+                Sending your prompt to the AI model. This may take a few seconds.
+              </p>
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* Scoring in progress — shown after LLM finishes while AI judge runs */}
+      {loading && loadingPhase === "scoring" && (
+        <section className="rounded-xl border border-amber-100 bg-amber-50 p-6">
+          <div className="flex items-center gap-3">
+            <LoadingSpinner className="h-5 w-5 text-amber-500" />
+            <div>
+              <p className="text-sm font-semibold text-amber-800">Scoring your response…</p>
+              <p className="text-xs text-amber-600 mt-0.5">
+                AI judge is evaluating your response against the rubric. Results will appear automatically.
               </p>
             </div>
           </div>
@@ -391,12 +401,6 @@ export default function ExerciseClient({ exercise, workshopId }: Props) {
               <span className="flex items-center gap-1.5 text-xs text-blue-500">
                 <LoadingSpinner className="h-3.5 w-3.5" />
                 streaming…
-              </span>
-            )}
-            {loading && loadingPhase === "scoring" && (
-              <span className="flex items-center gap-1.5 text-xs text-amber-600">
-                <LoadingSpinner className="h-3.5 w-3.5" />
-                scoring…
               </span>
             )}
           </div>

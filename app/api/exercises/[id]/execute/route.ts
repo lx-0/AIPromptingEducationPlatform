@@ -140,6 +140,11 @@ export async function POST(
           [fullResponse, submissionId]
         );
 
+        // Notify client that scoring is starting
+        controller.enqueue(
+          encoder.encode(`data: ${JSON.stringify({ scoring: true })}\n\n`)
+        );
+
         // Run AI judge scoring
         let score = null;
         try {

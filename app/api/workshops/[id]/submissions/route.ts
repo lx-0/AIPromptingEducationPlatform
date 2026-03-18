@@ -3,7 +3,7 @@ import pool from "@/lib/db";
 import { getSession } from "@/lib/session";
 
 export async function GET(
-  _request: Request,
+  request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
@@ -27,6 +27,16 @@ export async function GET(
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 
+  const url = new URL(request.url);
+  const since = url.searchParams.get("since");
+
+  const queryParams: (string | null)[] = [id];
+  let sinceClause = "";
+  if (since) {
+    queryParams.push(since);
+    sinceClause = `AND s.submitted_at > $${queryParams.length}`;
+  }
+
   const result = await pool.query(
     `SELECT
        s.id,
@@ -40,9 +50,9 @@ export async function GET(
      JOIN exercises e ON s.exercise_id = e.id
      JOIN users u ON s.trainee_id = u.id
      LEFT JOIN scores sc ON sc.submission_id = s.id
-     WHERE e.workshop_id = $1
+     WHERE e.workshop_id = $1 ${sinceClause}
      ORDER BY s.submitted_at DESC`,
-    [id]
+    queryParams
   );
 
   return NextResponse.json(result.rows);
