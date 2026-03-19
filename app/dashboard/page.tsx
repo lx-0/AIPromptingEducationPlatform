@@ -4,6 +4,7 @@ import { getSession } from "@/lib/session";
 import pool from "@/lib/db";
 import GamificationPanel from "@/components/GamificationPanel";
 import ThemeToggle from "@/components/ThemeToggle";
+import { getSubscription } from "@/lib/billing";
 
 type InstructorWorkshop = {
   id: string;
@@ -42,6 +43,10 @@ export default async function DashboardPage() {
   if (!session.userId) {
     redirect("/auth/sign-in");
   }
+
+  const subscription = session.role === "instructor"
+    ? await getSubscription(session.userId)
+    : null;
 
   let workshopProgress: WorkshopProgress[] = [];
   let instructorWorkshops: InstructorWorkshop[] = [];
@@ -193,6 +198,14 @@ export default async function DashboardPage() {
           </span>
           <div className="flex items-center gap-3">
             <ThemeToggle />
+            {session.role === "instructor" && (
+              <Link
+                href="/billing"
+                className="text-sm text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100 transition-colors"
+              >
+                {subscription?.isActive ? "Billing" : "Upgrade"}
+              </Link>
+            )}
             <form action="/auth/sign-out" method="POST">
               <button
                 type="submit"

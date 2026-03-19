@@ -121,3 +121,27 @@ CREATE TABLE user_badges (
 );
 
 CREATE INDEX idx_user_badges_trainee_id ON user_badges (trainee_id);
+
+-- ============================================================
+-- subscriptions
+-- Tracks Stripe subscription state per instructor user.
+-- ============================================================
+ALTER TABLE users
+  ADD COLUMN stripe_customer_id TEXT UNIQUE;
+
+CREATE TABLE subscriptions (
+  id                     UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id                UUID        NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  stripe_subscription_id TEXT        NOT NULL UNIQUE,
+  stripe_customer_id     TEXT        NOT NULL,
+  plan                   TEXT        NOT NULL CHECK (plan IN ('free', 'pro', 'team')),
+  status                 TEXT        NOT NULL,
+  current_period_start   TIMESTAMPTZ,
+  current_period_end     TIMESTAMPTZ,
+  cancel_at_period_end   BOOLEAN     NOT NULL DEFAULT FALSE,
+  created_at             TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at             TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX idx_subscriptions_user_id            ON subscriptions (user_id);
+CREATE INDEX idx_subscriptions_stripe_customer_id ON subscriptions (stripe_customer_id);

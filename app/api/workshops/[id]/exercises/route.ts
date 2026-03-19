@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import pool from "@/lib/db";
 import { getSession } from "@/lib/session";
+import { isPaidSubscriber, FREE_TIER_LIMITS } from "@/lib/billing";
 
 export async function GET(
   _request: Request,
@@ -30,6 +31,25 @@ export async function POST(
 
   if (!session.userId) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  // Enforce free-tier exercises-per-workshop limit
+  const paid = await isPaidSubscriber(session.userId);
+  if (!paid) {
+    const countResult = await pool.query(
+      "SELECT COUNT(*) FROM exercises WHERE workshop_id = $1",
+      [id]
+    );
+    const count = parseInt(countResult.rows[0].count, 10);
+    if (count >= FREE_TIER_LIMITS.maxExercisesPerWorkshop) {
+      return NextResponse.json(
+        {
+          error: `Free tier is limited to ${FREE_TIER_LIMITS.maxExercisesPerWorkshop} exercises per workshop. Upgrade to Pro to add more.`,
+          code: "FREE_TIER_LIMIT",
+        },
+        { status: 402 }
+      );
+    }
   }
 
   const body = await request.json();
