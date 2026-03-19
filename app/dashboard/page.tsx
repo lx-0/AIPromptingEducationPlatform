@@ -198,6 +198,12 @@ export default async function DashboardPage() {
           </span>
           <div className="flex items-center gap-3">
             <ThemeToggle />
+            <Link
+              href="/docs"
+              className="text-sm text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100 transition-colors"
+            >
+              Help
+            </Link>
             {session.role === "instructor" && (
               <Link
                 href="/billing"

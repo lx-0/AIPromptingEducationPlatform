@@ -52,6 +52,12 @@ export default async function ExercisePage({
           </Link>
           <div className="flex items-center gap-3">
             <ThemeToggle />
+            <Link
+              href="/docs"
+              className="text-sm text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100 transition-colors"
+            >
+              Help
+            </Link>
             <form action="/auth/sign-out" method="POST">
               <button type="submit" className="text-sm text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100">
                 Sign out

@@ -98,6 +98,12 @@ export default async function WorkshopLeaderboardPage({
           </Link>
           <div className="flex items-center gap-3">
             <ThemeToggle />
+            <Link
+              href="/docs"
+              className="text-sm text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100 transition-colors"
+            >
+              Help
+            </Link>
             <Link href="/dashboard" className="text-sm text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200">
               Dashboard
             </Link>
