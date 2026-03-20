@@ -4,6 +4,7 @@ import pool from "@/lib/db";
 import { getSession } from "@/lib/session";
 import { scoreSubmission } from "@/lib/scorer";
 import { updateStreak, checkAndAwardBadges } from "@/lib/badges";
+import { sendScoreNotification } from "@/lib/email";
 
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
@@ -22,6 +23,7 @@ type ModelConfig = {
 
 type Exercise = {
   id: string;
+  title: string;
   system_prompt: string | null;
   model_config: ModelConfig;
 };
@@ -49,7 +51,7 @@ export async function POST(
 
   // Load exercise
   const exerciseResult = await pool.query<Exercise>(
-    "SELECT id, system_prompt, model_config FROM exercises WHERE id = $1",
+    "SELECT id, title, system_prompt, model_config FROM exercises WHERE id = $1",
     [id]
   );
   const exercise = exerciseResult.rows[0];
@@ -170,6 +172,38 @@ export async function POST(
             }
           } catch {
             // Gamification failure is non-fatal
+          }
+
+          // Fire-and-forget score notification (check preference first)
+          if (score) {
+            pool
+              .query<{ email: string; display_name: string; score_notify: boolean }>(
+                `SELECT u.email, u.display_name,
+                        COALESCE(ep.score_notify, TRUE) AS score_notify
+                 FROM users u
+                 LEFT JOIN email_preferences ep ON ep.user_id = u.id
+                 WHERE u.id = $1`,
+                [session.userId]
+              )
+              .then((r) => {
+                const row = r.rows[0];
+                if (row?.score_notify) {
+                  const overall =
+                    typeof score.feedback?.overall === "string"
+                      ? score.feedback.overall
+                      : "";
+                  sendScoreNotification(
+                    row.email,
+                    row.display_name,
+                    exercise.title,
+                    score.total_score,
+                    score.max_score,
+                    overall,
+                    submissionId
+                  ).catch(() => {});
+                }
+              })
+              .catch(() => {});
           }
         } catch {
           // Scoring failure is non-fatal; client can retry via POST /api/submissions/[id]/score

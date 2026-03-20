@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import pool from "@/lib/db";
 import { getSession } from "@/lib/session";
+import { sendWelcomeEmail } from "@/lib/email";
 
 export async function POST(request: Request) {
   const body = await request.json();
@@ -41,12 +42,21 @@ export async function POST(request: Request) {
     );
     const user = result.rows[0];
 
+    // Create default email preferences row
+    await client.query(
+      `INSERT INTO email_preferences (user_id) VALUES ($1) ON CONFLICT DO NOTHING`,
+      [user.id]
+    );
+
     const session = await getSession();
     session.userId = user.id;
     session.email = user.email;
     session.role = user.role;
     session.displayName = user.display_name;
     await session.save();
+
+    // Fire-and-forget welcome email
+    sendWelcomeEmail(user.email, user.display_name).catch(() => {});
 
     return NextResponse.json({ ok: true }, { status: 201 });
   } finally {
