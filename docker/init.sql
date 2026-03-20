@@ -9,13 +9,20 @@ CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 -- Supabase auth.users + public.profiles).
 -- ============================================================
 CREATE TABLE users (
-  id            UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
-  email         TEXT        NOT NULL UNIQUE,
-  password_hash TEXT        NOT NULL,
-  display_name  TEXT        NOT NULL,
-  role          TEXT        NOT NULL CHECK (role IN ('instructor', 'trainee')),
-  created_at    TIMESTAMPTZ NOT NULL DEFAULT NOW()
+  id               UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+  email            TEXT        NOT NULL UNIQUE,
+  password_hash    TEXT,
+  display_name     TEXT        NOT NULL,
+  role             TEXT        NOT NULL CHECK (role IN ('instructor', 'trainee')),
+  oauth_provider   TEXT,
+  oauth_provider_id TEXT,
+  created_at       TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  CONSTRAINT users_oauth_provider_id_unique UNIQUE (oauth_provider, oauth_provider_id)
 );
+
+CREATE INDEX idx_users_oauth
+  ON users (oauth_provider, oauth_provider_id)
+  WHERE oauth_provider IS NOT NULL;
 
 -- ============================================================
 -- workshops

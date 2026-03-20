@@ -6,6 +6,12 @@ export interface SessionData {
   email: string;
   role: string;
   displayName: string;
+  // Temporary: set during OAuth flow before role selection completes
+  pendingOAuth?: {
+    googleId: string;
+    email: string;
+    displayName: string;
+  };
 }
 
 export const sessionOptions: SessionOptions = {
