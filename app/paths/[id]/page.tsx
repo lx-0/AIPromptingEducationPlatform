@@ -1,9 +1,56 @@
 import { redirect } from "next/navigation";
+import type { Metadata } from "next";
 import Link from "next/link";
 import { getSession } from "@/lib/session";
 import pool from "@/lib/db";
 import ThemeToggle from "@/components/ThemeToggle";
 import PathEnrollButton from "./PathEnrollButton";
+import SocialShareButtons from "@/components/SocialShareButtons";
+
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}): Promise<Metadata> {
+  const { id } = await params;
+  const result = await pool.query<{
+    title: string;
+    description: string | null;
+    status: string;
+    instructor_name: string;
+  }>(
+    `SELECT lp.title, lp.description, lp.status, u.display_name AS instructor_name
+     FROM learning_paths lp
+     LEFT JOIN users u ON u.id = lp.instructor_id
+     WHERE lp.id = $1`,
+    [id]
+  );
+  const p = result.rows[0];
+  if (!p || p.status !== "published") return {};
+
+  const ogImageUrl = `${APP_URL}/api/og?title=${encodeURIComponent(p.title)}&subtitle=${encodeURIComponent(`Learning Path · by ${p.instructor_name}`)}&type=path`;
+
+  return {
+    title: `${p.title} — Prompting School`,
+    description: p.description ?? `Follow the ${p.title} learning path on Prompting School.`,
+    openGraph: {
+      title: p.title,
+      description: p.description ?? `Follow the ${p.title} learning path on Prompting School.`,
+      url: `${APP_URL}/paths/${id}`,
+      siteName: "Prompting School",
+      images: [{ url: ogImageUrl, width: 1200, height: 630, alt: p.title }],
+      type: "website",
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: p.title,
+      description: p.description ?? `Follow the ${p.title} learning path on Prompting School.`,
+      images: [ogImageUrl],
+    },
+  };
+}
 
 type WorkshopProgress = {
   workshop_id: string;
@@ -133,8 +180,25 @@ export default async function LearningPathDetailPage({
       ? Math.round((completedCount / workshops.length) * 100)
       : 0;
 
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "Course",
+    name: path.title,
+    description: path.description ?? undefined,
+    url: `${APP_URL}/paths/${id}`,
+    provider: {
+      "@type": "Organization",
+      name: "Prompting School",
+      sameAs: APP_URL,
+    },
+  };
+
   return (
     <main id="main-content" className="min-h-screen bg-gray-50 dark:bg-gray-950">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
       <nav aria-label="Main navigation" className="bg-white dark:bg-gray-900 shadow-sm dark:shadow-gray-800">
         <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-3">
           <Link href="/dashboard" className="text-lg font-semibold text-gray-900 dark:text-gray-100 hover:text-gray-700 dark:hover:text-gray-300">
@@ -179,6 +243,14 @@ export default async function LearningPathDetailPage({
               <p className="mt-2 text-xs text-gray-400 dark:text-gray-500">
                 By {path.instructor_name} · {workshops.length} workshop{workshops.length !== 1 ? "s" : ""}
               </p>
+              {path.status === "published" && (
+                <div className="mt-3">
+                  <SocialShareButtons
+                    url={`${APP_URL}/paths/${id}`}
+                    title={path.title}
+                  />
+                </div>
+              )}
             </div>
 
             {session.role === "trainee" && (

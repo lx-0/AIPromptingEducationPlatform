@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import pool from "@/lib/db";
 import { getSession } from "@/lib/session";
+import { scheduleReengagement } from "@/lib/queue";
 
 export async function POST(request: Request) {
   const body = await request.json();
@@ -35,6 +36,9 @@ export async function POST(request: Request) {
   session.displayName = user.display_name;
   session.isAdmin = user.is_admin ?? false;
   await session.save();
+
+  // Reschedule re-engagement — if user becomes inactive again, they'll get a nudge
+  scheduleReengagement(user.id).catch(() => {});
 
   return NextResponse.json({ ok: true });
 }

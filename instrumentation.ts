@@ -4,6 +4,9 @@ export async function register() {
     if (process.env.REDIS_URL) {
       const { startScoringWorker } = await import("./lib/workers/scoring-worker");
       startScoringWorker();
+
+      const { startDripWorker } = await import("./lib/workers/drip-worker");
+      startDripWorker();
     }
   }
 }

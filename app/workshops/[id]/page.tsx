@@ -1,9 +1,62 @@
 import { notFound, redirect } from "next/navigation";
+import type { Metadata } from "next";
 import Link from "next/link";
 import dynamic from "next/dynamic";
 import { getSession } from "@/lib/session";
 import pool from "@/lib/db";
 import ThemeToggle from "@/components/ThemeToggle";
+import SocialShareButtons from "@/components/SocialShareButtons";
+
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}): Promise<Metadata> {
+  const { id } = await params;
+  const result = await pool.query<{
+    title: string;
+    description: string | null;
+    status: string;
+    instructor_name: string;
+    enrollment_count: string;
+  }>(
+    `SELECT w.title, w.description, w.status,
+            u.display_name AS instructor_name,
+            COUNT(DISTINCT e.user_id)::text AS enrollment_count
+     FROM workshops w
+     LEFT JOIN users u ON u.id = w.instructor_id
+     LEFT JOIN enrollments e ON e.workshop_id = w.id
+     WHERE w.id = $1
+     GROUP BY w.id, u.display_name`,
+    [id]
+  );
+  const w = result.rows[0];
+  if (!w || w.status !== "published") return {};
+
+  const stat = `${w.enrollment_count} enrolled`;
+  const ogImageUrl = `${APP_URL}/api/og?title=${encodeURIComponent(w.title)}&subtitle=${encodeURIComponent(`by ${w.instructor_name}`)}&type=workshop&stat=${encodeURIComponent(stat)}`;
+
+  return {
+    title: `${w.title} — Prompting School`,
+    description: w.description ?? `Learn ${w.title} on Prompting School.`,
+    openGraph: {
+      title: w.title,
+      description: w.description ?? `Learn ${w.title} on Prompting School.`,
+      url: `${APP_URL}/workshops/${id}`,
+      siteName: "Prompting School",
+      images: [{ url: ogImageUrl, width: 1200, height: 630, alt: w.title }],
+      type: "website",
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: w.title,
+      description: w.description ?? `Learn ${w.title} on Prompting School.`,
+      images: [ogImageUrl],
+    },
+  };
+}
 
 const PublishPanel = dynamic(() => import("./PublishPanel"), {
   loading: () => (
@@ -131,8 +184,25 @@ export default async function WorkshopDetailPage({
       ? Math.round((Number(workshopStats.unique_trainees) / enrolledCount) * 100)
       : null;
 
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "Course",
+    name: workshop.title,
+    description: workshop.description ?? undefined,
+    url: `${APP_URL}/workshops/${id}`,
+    provider: {
+      "@type": "Organization",
+      name: "Prompting School",
+      sameAs: APP_URL,
+    },
+  };
+
   return (
     <main id="main-content" className="min-h-screen bg-gray-50 dark:bg-gray-950">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
       <nav aria-label="Main navigation" className="bg-white dark:bg-gray-900 shadow-sm dark:shadow-gray-800">
         <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-3">
           <Link href="/dashboard" className="text-lg font-semibold text-gray-900 dark:text-gray-100 hover:text-gray-700 dark:hover:text-gray-300">
@@ -170,6 +240,14 @@ export default async function WorkshopDetailPage({
             </div>
             {workshop.description && (
               <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">{workshop.description}</p>
+            )}
+            {workshop.status === "published" && (
+              <div className="mt-3">
+                <SocialShareButtons
+                  url={`${APP_URL}/workshops/${id}`}
+                  title={workshop.title}
+                />
+              </div>
             )}
           </div>
           <div className="flex flex-wrap gap-2">

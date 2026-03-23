@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { useToast } from "@/components/ToastProvider";
 
@@ -9,6 +9,7 @@ type Role = "instructor" | "trainee";
 
 export default function SignUpPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { addToast } = useToast();
 
   const [email, setEmail] = useState("");
@@ -17,6 +18,12 @@ export default function SignUpPage() {
   const [role, setRole] = useState<Role>("trainee");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [referralCode, setReferralCode] = useState("");
+
+  useEffect(() => {
+    const ref = searchParams.get("ref");
+    if (ref) setReferralCode(ref.toUpperCase());
+  }, [searchParams]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -26,7 +33,7 @@ export default function SignUpPage() {
     const res = await fetch("/api/auth/sign-up", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, password, displayName, role }),
+      body: JSON.stringify({ email, password, displayName, role, referralCode: referralCode || undefined }),
     });
 
     if (!res.ok) {
@@ -147,6 +154,23 @@ export default function SignUpPage() {
               ))}
             </div>
           </fieldset>
+
+          <div>
+            <label
+              htmlFor="referralCode"
+              className="block text-sm font-medium text-gray-700 dark:text-gray-300"
+            >
+              Referral code <span className="text-gray-400 font-normal">(optional)</span>
+            </label>
+            <input
+              id="referralCode"
+              type="text"
+              value={referralCode}
+              onChange={(e) => setReferralCode(e.target.value.toUpperCase())}
+              placeholder="e.g. AB12CD34"
+              className="mt-1 block w-full rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-3 py-2.5 text-sm text-gray-900 dark:text-gray-100 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 font-mono tracking-wider"
+            />
+          </div>
 
           <button
             type="submit"

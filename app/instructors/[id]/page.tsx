@@ -1,9 +1,58 @@
 import { notFound } from "next/navigation";
+import type { Metadata } from "next";
 import Link from "next/link";
 import pool from "@/lib/db";
 import ThemeToggle from "@/components/ThemeToggle";
 import FollowButton from "@/components/FollowButton";
 import { getSession } from "@/lib/session";
+
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}): Promise<Metadata> {
+  const { id } = await params;
+  const result = await pool.query<{
+    display_name: string;
+    bio: string | null;
+    workshop_count: string;
+  }>(
+    `SELECT u.display_name, u.bio,
+            COUNT(DISTINCT w.id)::text AS workshop_count
+     FROM users u
+     LEFT JOIN workshops w ON w.instructor_id = u.id AND w.status = 'published'
+     WHERE u.id = $1 AND u.role = 'instructor'
+     GROUP BY u.id`,
+    [id]
+  );
+  const instructor = result.rows[0];
+  if (!instructor) return {};
+
+  const stat = `${instructor.workshop_count} workshop${Number(instructor.workshop_count) !== 1 ? "s" : ""}`;
+  const ogImageUrl = `${APP_URL}/api/og?title=${encodeURIComponent(instructor.display_name)}&subtitle=${encodeURIComponent("Instructor at Prompting School")}&type=instructor&stat=${encodeURIComponent(stat)}`;
+  const description = instructor.bio ?? `${instructor.display_name} teaches AI prompting on Prompting School.`;
+
+  return {
+    title: `${instructor.display_name} — Prompting School`,
+    description,
+    openGraph: {
+      title: instructor.display_name,
+      description,
+      url: `${APP_URL}/instructors/${id}`,
+      siteName: "Prompting School",
+      images: [{ url: ogImageUrl, width: 1200, height: 630, alt: instructor.display_name }],
+      type: "profile",
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: instructor.display_name,
+      description,
+      images: [ogImageUrl],
+    },
+  };
+}
 
 interface InstructorProfile {
   id: string;
@@ -121,8 +170,25 @@ export default async function InstructorProfilePage({
     .toUpperCase()
     .slice(0, 2);
 
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "Person",
+    name: instructor.display_name,
+    description: instructor.bio ?? undefined,
+    url: `${APP_URL}/instructors/${id}`,
+    worksFor: {
+      "@type": "Organization",
+      name: "Prompting School",
+      url: APP_URL,
+    },
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
       {/* Nav */}
       <nav className="bg-white dark:bg-gray-900 shadow-sm dark:shadow-gray-800">
         <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-3">

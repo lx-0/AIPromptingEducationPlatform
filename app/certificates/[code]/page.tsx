@@ -1,11 +1,45 @@
 import { notFound } from "next/navigation";
+import type { Metadata } from "next";
 import Link from "next/link";
 import { getCertificateByCode } from "@/lib/certificates";
 import CertificateActions from "./CertificateActions";
+import SocialShareButtons from "@/components/SocialShareButtons";
 
 type Props = { params: Promise<{ code: string }> };
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
+
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { code } = await params;
+  const certificate = await getCertificateByCode(code.toUpperCase());
+  if (!certificate) return {};
+
+  const title = `${certificate.trainee_name} completed "${certificate.entity_title}"`;
+  const description = `Verified certificate of completion from Prompting School.`;
+  const stat = certificate.max_score > 0
+    ? `${Math.round((certificate.total_score / certificate.max_score) * 100)}% score`
+    : "Completed";
+  const ogImageUrl = `${APP_URL}/api/og?title=${encodeURIComponent(certificate.entity_title)}&subtitle=${encodeURIComponent(`Completed by ${certificate.trainee_name}`)}&type=certificate&stat=${encodeURIComponent(stat)}`;
+
+  return {
+    title: `Certificate: ${certificate.entity_title} — Prompting School`,
+    description,
+    openGraph: {
+      title,
+      description,
+      url: `${APP_URL}/certificates/${code}`,
+      siteName: "Prompting School",
+      images: [{ url: ogImageUrl, width: 1200, height: 630, alt: title }],
+      type: "website",
+    },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description,
+      images: [ogImageUrl],
+    },
+  };
+}
 
 export default async function CertificateVerificationPage({ params }: Props) {
   const { code } = await params;
@@ -28,9 +62,33 @@ export default async function CertificateVerificationPage({ params }: Props) {
 
   const downloadUrl = `/api/certificates/${certificate.verification_code}/pdf`;
   const linkedinUrl = buildLinkedinShareUrl(certificate);
+  const certUrl = `${APP_URL}/certificates/${certificate.verification_code}`;
+
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "EducationalOccupationalCredential",
+    name: `Certificate of Completion: ${certificate.entity_title}`,
+    description: `${certificate.trainee_name} successfully completed ${certificate.entity_title} on Prompting School.`,
+    url: certUrl,
+    recognizedBy: {
+      "@type": "Organization",
+      name: "Prompting School",
+      url: APP_URL,
+    },
+    dateCreated: certificate.issued_at,
+    credentialCategory: "Certificate of Completion",
+    about: {
+      "@type": "Course",
+      name: certificate.entity_title,
+    },
+  };
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col items-center py-12 px-4">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
       {/* Verification badge */}
       <div className="mb-8 flex items-center gap-2 bg-green-50 border border-green-200 text-green-700 rounded-full px-4 py-2 text-sm font-medium">
         <svg className="w-4 h-4" viewBox="0 0 20 20" fill="currentColor">
@@ -120,6 +178,14 @@ export default async function CertificateVerificationPage({ params }: Props) {
         downloadUrl={downloadUrl}
         linkedinUrl={linkedinUrl}
       />
+
+      {/* Social sharing */}
+      <div className="mt-6">
+        <SocialShareButtons
+          url={certUrl}
+          title={`I completed "${certificate.entity_title}" on Prompting School!`}
+        />
+      </div>
 
       {/* Back to platform */}
       <Link

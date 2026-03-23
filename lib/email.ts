@@ -421,6 +421,111 @@ export async function sendNewWorkshopFromFollowedInstructorEmail(
 }
 
 // ---------------------------------------------------------------------------
+// Drip campaigns
+// ---------------------------------------------------------------------------
+
+export async function sendDripDay3Email(
+  to: string,
+  displayName: string
+): Promise<void> {
+  const content = `
+    <h1 style="margin:0 0 8px;font-size:22px;font-weight:700;color:#111827;">
+      Ready to go deeper, ${escHtml(displayName)}?
+    </h1>
+    <p style="margin:0 0 20px;font-size:15px;color:#374151;line-height:1.6;">
+      Here are 3 quick tips to get the most out of Prompting School:
+    </p>
+    <ol style="margin:0 0 28px;padding-left:20px;font-size:15px;color:#374151;line-height:1.8;">
+      <li><strong>Be specific.</strong> Clear, detailed prompts get better AI responses.</li>
+      <li><strong>Iterate.</strong> Treat each exercise as a conversation — refine your prompts based on feedback.</li>
+      <li><strong>Explore the marketplace.</strong> Browse workshops by skill level and topic.</li>
+    </ol>
+    <a href="${APP_URL}/marketplace"
+       style="display:inline-block;background:#2563eb;color:#ffffff;
+              font-size:14px;font-weight:600;text-decoration:none;
+              padding:12px 24px;border-radius:8px;">
+      Browse workshops
+    </a>
+    <p style="margin:20px 0 0;font-size:13px;color:#9ca3af;">
+      Keep going — you're just getting started.
+    </p>`;
+
+  await sendEmail(to, "3 tips for mastering AI prompting", baseTemplate(content));
+}
+
+export async function sendDripDay7Email(
+  to: string,
+  displayName: string,
+  submissionCount: number
+): Promise<void> {
+  const hasActivity = submissionCount > 0;
+
+  const content = hasActivity
+    ? `
+    <h1 style="margin:0 0 8px;font-size:22px;font-weight:700;color:#111827;">
+      One week in — great work, ${escHtml(displayName)}!
+    </h1>
+    <p style="margin:0 0 20px;font-size:15px;color:#374151;line-height:1.6;">
+      You've made ${submissionCount} submission${submissionCount !== 1 ? "s" : ""} already.
+      Consistency is the #1 factor in improving your prompting skills.
+    </p>
+    <p style="margin:0 0 24px;font-size:15px;color:#374151;line-height:1.6;">
+      Keep the momentum going — try a new workshop today.
+    </p>
+    <a href="${APP_URL}/marketplace"
+       style="display:inline-block;background:#2563eb;color:#ffffff;
+              font-size:14px;font-weight:600;text-decoration:none;
+              padding:12px 24px;border-radius:8px;">
+      Find a workshop
+    </a>`
+    : `
+    <h1 style="margin:0 0 8px;font-size:22px;font-weight:700;color:#111827;">
+      You signed up a week ago — let's get started!
+    </h1>
+    <p style="margin:0 0 20px;font-size:15px;color:#374151;line-height:1.6;">
+      Hey ${escHtml(displayName)}, we noticed you haven't tried an exercise yet.
+      It takes less than 5 minutes to complete your first one.
+    </p>
+    <a href="${APP_URL}/marketplace"
+       style="display:inline-block;background:#2563eb;color:#ffffff;
+              font-size:14px;font-weight:600;text-decoration:none;
+              padding:12px 24px;border-radius:8px;">
+      Start your first exercise
+    </a>`;
+
+  await sendEmail(to, `One week at Prompting School, ${displayName}`, baseTemplate(content));
+}
+
+export async function sendReengagementEmail(
+  to: string,
+  displayName: string
+): Promise<void> {
+  const content = `
+    <h1 style="margin:0 0 8px;font-size:22px;font-weight:700;color:#111827;">
+      We miss you, ${escHtml(displayName)}
+    </h1>
+    <p style="margin:0 0 20px;font-size:15px;color:#374151;line-height:1.6;">
+      It's been a while since you last practised on Prompting School. AI is moving fast —
+      there's never been a better time to sharpen your prompting skills.
+    </p>
+    <p style="margin:0 0 24px;font-size:15px;color:#374151;line-height:1.6;">
+      Jump back in and pick up where you left off:
+    </p>
+    <a href="${APP_URL}/dashboard"
+       style="display:inline-block;background:#2563eb;color:#ffffff;
+              font-size:14px;font-weight:600;text-decoration:none;
+              padding:12px 24px;border-radius:8px;">
+      Continue learning
+    </a>
+    <p style="margin:20px 0 0;font-size:13px;color:#9ca3af;">
+      If you'd rather not receive these reminders, you can update your preferences in
+      <a href="${APP_URL}/settings/email" style="color:#6b7280;text-decoration:underline;">email settings</a>.
+    </p>`;
+
+  await sendEmail(to, "Come back and keep learning", baseTemplate(content));
+}
+
+// ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
 
