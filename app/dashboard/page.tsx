@@ -5,6 +5,9 @@ import pool from "@/lib/db";
 import GamificationPanel from "@/components/GamificationPanel";
 import ThemeToggle from "@/components/ThemeToggle";
 import { getSubscription } from "@/lib/billing";
+import ActivityFeed from "@/components/ActivityFeed";
+import PeerReviewPanel from "@/components/PeerReviewPanel";
+import NotificationBell from "@/components/NotificationBell";
 
 type InstructorWorkshop = {
   id: string;
@@ -198,6 +201,7 @@ export default async function DashboardPage() {
           </span>
           <div className="flex items-center gap-3">
             <ThemeToggle />
+            <NotificationBell />
             <Link
               href="/docs"
               className="text-sm text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100 transition-colors"
@@ -320,6 +324,17 @@ export default async function DashboardPage() {
           {session.role === "trainee" && (
             <GamificationPanel />
           )}
+
+          {/* Peer review assignments for trainees */}
+          {session.role === "trainee" && workshopProgress.length > 0 && (
+            <PeerReviewPanel
+              workshopId={workshopProgress[0].id}
+              isInstructor={false}
+            />
+          )}
+
+          {/* Activity feed */}
+          <ActivityFeed />
 
           {session.role === "trainee" && (
             <div>

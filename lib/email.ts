@@ -292,6 +292,135 @@ export async function sendCertificateEmail(
 }
 
 // ---------------------------------------------------------------------------
+// Collaboration notifications
+// ---------------------------------------------------------------------------
+
+export async function sendDiscussionReplyEmail(
+  to: string,
+  displayName: string,
+  replierName: string,
+  exerciseTitle: string,
+  replyBody: string,
+  exerciseUrl: string
+): Promise<void> {
+  const content = `
+    <h1 style="margin:0 0 8px;font-size:22px;font-weight:700;color:#111827;">
+      New reply to your discussion
+    </h1>
+    <p style="margin:0 0 4px;font-size:14px;color:#6b7280;">
+      Exercise: ${escHtml(exerciseTitle)}
+    </p>
+    <p style="margin:0 0 20px;font-size:15px;color:#374151;line-height:1.6;">
+      <strong>${escHtml(replierName)}</strong> replied to your discussion:
+    </p>
+    <div style="background:#f9fafb;border-left:3px solid #2563eb;
+                padding:12px 16px;border-radius:0 6px 6px 0;margin-bottom:24px;">
+      <p style="margin:0;font-size:14px;color:#374151;line-height:1.6;">
+        ${escHtml(replyBody.slice(0, 300))}${replyBody.length > 300 ? "…" : ""}
+      </p>
+    </div>
+    <a href="${exerciseUrl}"
+       style="display:inline-block;background:#2563eb;color:#ffffff;
+              font-size:14px;font-weight:600;text-decoration:none;
+              padding:12px 24px;border-radius:8px;">
+      View Discussion
+    </a>`;
+
+  await sendEmail(
+    to,
+    `${replierName} replied to your discussion in "${exerciseTitle}"`,
+    baseTemplate(content)
+  );
+}
+
+export async function sendPeerReviewReceivedEmail(
+  to: string,
+  displayName: string,
+  exerciseTitle: string,
+  rating: number,
+  feedbackText: string,
+  submissionUrl: string
+): Promise<void> {
+  const stars = "★".repeat(rating) + "☆".repeat(5 - rating);
+
+  const content = `
+    <h1 style="margin:0 0 8px;font-size:22px;font-weight:700;color:#111827;">
+      You received a peer review
+    </h1>
+    <p style="margin:0 0 20px;font-size:14px;color:#6b7280;">
+      Exercise: ${escHtml(exerciseTitle)}
+    </p>
+    <div style="background:#f9fafb;border-radius:10px;padding:20px 24px;
+                margin-bottom:24px;border:1px solid #e5e7eb;">
+      <p style="margin:0 0 8px;font-size:22px;color:#f59e0b;letter-spacing:0.05em;">
+        ${stars}
+      </p>
+      <p style="margin:0;font-size:14px;color:#374151;line-height:1.6;">
+        ${escHtml(feedbackText.slice(0, 400))}${feedbackText.length > 400 ? "…" : ""}
+      </p>
+    </div>
+    <a href="${submissionUrl}"
+       style="display:inline-block;background:#2563eb;color:#ffffff;
+              font-size:14px;font-weight:600;text-decoration:none;
+              padding:12px 24px;border-radius:8px;">
+      View Full Review
+    </a>
+    <p style="margin:20px 0 0;font-size:13px;color:#9ca3af;">
+      Peer feedback helps you grow — keep it up, ${escHtml(displayName)}!
+    </p>`;
+
+  await sendEmail(
+    to,
+    `You received a ${rating}-star peer review on "${exerciseTitle}"`,
+    baseTemplate(content)
+  );
+}
+
+export async function sendNewWorkshopFromFollowedInstructorEmail(
+  to: string,
+  displayName: string,
+  instructorName: string,
+  workshopTitle: string,
+  workshopDescription: string,
+  workshopUrl: string
+): Promise<void> {
+  const content = `
+    <h1 style="margin:0 0 8px;font-size:22px;font-weight:700;color:#111827;">
+      New workshop from ${escHtml(instructorName)}
+    </h1>
+    <p style="margin:0 0 20px;font-size:15px;color:#374151;line-height:1.6;">
+      An instructor you follow just published a new workshop:
+    </p>
+    <div style="background:#f9fafb;border-radius:10px;padding:20px 24px;
+                margin-bottom:24px;border:1px solid #e5e7eb;">
+      <p style="margin:0 0 6px;font-size:17px;font-weight:700;color:#111827;">
+        ${escHtml(workshopTitle)}
+      </p>
+      ${workshopDescription
+        ? `<p style="margin:0;font-size:14px;color:#6b7280;line-height:1.6;">
+             ${escHtml(workshopDescription.slice(0, 200))}${workshopDescription.length > 200 ? "…" : ""}
+           </p>`
+        : ""}
+    </div>
+    <a href="${workshopUrl}"
+       style="display:inline-block;background:#2563eb;color:#ffffff;
+              font-size:14px;font-weight:600;text-decoration:none;
+              padding:12px 24px;border-radius:8px;">
+      View Workshop
+    </a>
+    <p style="margin:20px 0 0;font-size:13px;color:#9ca3af;">
+      You're following ${escHtml(instructorName)}. Manage your follows in
+      <a href="${APP_URL}/settings/email" style="color:#6b7280;">settings</a>.
+    </p>`;
+
+  await sendEmail(
+    to,
+    `New workshop: "${workshopTitle}" by ${instructorName}`,
+    baseTemplate(content)
+  );
+}
+
+// ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
 

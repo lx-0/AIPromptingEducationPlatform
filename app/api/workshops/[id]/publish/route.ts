@@ -2,7 +2,13 @@ import { NextResponse } from "next/server";
 import { randomBytes } from "crypto";
 import pool from "@/lib/db";
 import { getSession } from "@/lib/session";
-import { sendWorkshopPublishedEmail, sendWorkshopInviteEmail } from "@/lib/email";
+import {
+  sendWorkshopPublishedEmail,
+  sendWorkshopInviteEmail,
+  sendNewWorkshopFromFollowedInstructorEmail,
+} from "@/lib/email";
+
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
 
 export async function POST(
   request: Request,
@@ -80,6 +86,48 @@ export async function POST(
       finalCode
     ).catch(() => {});
   }
+
+  // Fire-and-forget: notify followers of this instructor
+  pool
+    .query(
+      `SELECT f.follower_id, u.email, p.display_name
+       FROM follows f
+       JOIN profiles p ON p.id = f.follower_id
+       JOIN auth.users u ON u.id = f.follower_id
+       WHERE f.instructor_id = $1`,
+      [session.userId]
+    )
+    .then(async (followersResult) => {
+      const workshopUrl = `${APP_URL}/marketplace`;
+      for (const follower of followersResult.rows) {
+        // In-app notification
+        await pool
+          .query(
+            `INSERT INTO notifications (user_id, type, payload)
+             VALUES ($1, 'new_workshop_from_followed', $2)`,
+            [
+              follower.follower_id,
+              JSON.stringify({
+                workshop_id: workshop.id,
+                workshop_title: workshopTitle,
+                instructor_name: session.displayName,
+              }),
+            ]
+          )
+          .catch(() => {});
+
+        // Email
+        sendNewWorkshopFromFollowedInstructorEmail(
+          follower.email,
+          follower.display_name,
+          session.displayName ?? "Your instructor",
+          workshopTitle,
+          workshop.description ?? "",
+          workshopUrl
+        ).catch(() => {});
+      }
+    })
+    .catch(() => {});
 
   return NextResponse.json(workshop);
 }

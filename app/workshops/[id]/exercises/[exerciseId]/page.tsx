@@ -4,6 +4,8 @@ import { getSession } from "@/lib/session";
 import pool from "@/lib/db";
 import ExerciseClient from "./ExerciseClient";
 import ThemeToggle from "@/components/ThemeToggle";
+import DiscussionThread from "@/components/DiscussionThread";
+import NotificationBell from "@/components/NotificationBell";
 
 type ExerciseType = "standard" | "multi_step" | "comparison" | "constrained";
 
@@ -78,6 +80,7 @@ export default async function ExercisePage({
           </Link>
           <div className="flex items-center gap-3">
             <ThemeToggle />
+            <NotificationBell />
             <Link
               href="/docs"
               className="text-sm text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100 transition-colors"
@@ -119,6 +122,13 @@ export default async function ExercisePage({
         </div>
 
         <ExerciseClient exercise={exerciseWithSteps} workshopId={id} />
+
+        <DiscussionThread
+          exerciseId={exerciseId}
+          currentUserId={session.userId}
+          currentUserRole={session.role}
+          isInstructor={isOwner}
+        />
       </div>
     </main>
   );

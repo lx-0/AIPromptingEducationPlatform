@@ -2,6 +2,8 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import pool from "@/lib/db";
 import ThemeToggle from "@/components/ThemeToggle";
+import FollowButton from "@/components/FollowButton";
+import { getSession } from "@/lib/session";
 
 interface InstructorProfile {
   id: string;
@@ -102,11 +104,15 @@ export default async function InstructorProfilePage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const data = await getInstructorData(id);
+  const [data, session] = await Promise.all([
+    getInstructorData(id),
+    getSession(),
+  ]);
 
   if (!data) notFound();
 
   const { instructor, workshops, stats } = data;
+  const isTrainee = session.userId && session.role === "trainee";
 
   const initials = instructor.display_name
     .split(" ")
@@ -170,12 +176,19 @@ export default async function InstructorProfilePage({
               </div>
             )}
             <div className="flex-1">
-              <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
-                {instructor.display_name}
-              </h1>
-              <p className="text-sm text-gray-500 dark:text-gray-400">
-                Instructor since {new Date(instructor.created_at).getFullYear()}
-              </p>
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+                    {instructor.display_name}
+                  </h1>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">
+                    Instructor since {new Date(instructor.created_at).getFullYear()}
+                  </p>
+                </div>
+                {isTrainee && (
+                  <FollowButton instructorId={instructor.id} />
+                )}
+              </div>
               {instructor.bio && (
                 <p className="mt-3 text-gray-700 dark:text-gray-300">{instructor.bio}</p>
               )}
