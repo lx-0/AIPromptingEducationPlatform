@@ -20,14 +20,29 @@ export async function POST(request: Request) {
     );
   }
 
-  // Verify exercise exists
+  // Verify exercise exists and check scheduling window
   const exerciseResult = await pool.query(
-    "SELECT id FROM exercises WHERE id = $1",
+    "SELECT id, open_at, close_at FROM exercises WHERE id = $1",
     [exercise_id]
   );
 
   if (exerciseResult.rows.length === 0) {
     return NextResponse.json({ error: "Exercise not found" }, { status: 404 });
+  }
+
+  const { open_at, close_at } = exerciseResult.rows[0];
+  const now = new Date();
+  if (open_at && new Date(open_at) > now) {
+    return NextResponse.json(
+      { error: "Submissions are not open yet", opens_at: open_at },
+      { status: 403 }
+    );
+  }
+  if (close_at && new Date(close_at) < now) {
+    return NextResponse.json(
+      { error: "Submission window has closed", closed_at: close_at },
+      { status: 403 }
+    );
   }
 
   const result = await pool.query(

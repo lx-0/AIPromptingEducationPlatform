@@ -16,10 +16,13 @@ type LeaderboardRow = {
 
 export default async function WorkshopLeaderboardPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{ cohort_id?: string }>;
 }) {
   const { id: workshopId } = await params;
+  const { cohort_id: cohortId } = await searchParams;
   const session = await getSession();
 
   if (!session.userId) {
@@ -45,16 +48,39 @@ export default async function WorkshopLeaderboardPage({
     }
   }
 
-  // Fetch leaderboard data
-  const result = await pool.query<{
-    trainee_id: string;
-    display_name: string;
-    avg_score_pct: string;
-    exercises_completed: string;
-    badge_count: string;
-    current_streak: string | null;
-  }>(
-    `SELECT
+  // Load cohorts for tab navigation (instructor view)
+  const cohortsResult = await pool.query<{ id: string; name: string }>(
+    "SELECT id, name FROM cohorts WHERE workshop_id = $1 ORDER BY created_at ASC",
+    [workshopId]
+  );
+  const cohorts = cohortsResult.rows;
+
+  // Fetch leaderboard data (optionally filtered by cohort)
+  let leaderboardQuery: string;
+  let leaderboardParams: unknown[];
+
+  if (cohortId) {
+    leaderboardQuery = `SELECT
+       u.id                                               AS trainee_id,
+       u.display_name,
+       ROUND(AVG(sc.total_score / sc.max_score * 100), 1)::text AS avg_score_pct,
+       COUNT(DISTINCT s.exercise_id)::text               AS exercises_completed,
+       COUNT(DISTINCT ub.id)::text                       AS badge_count,
+       st.current_streak::text                           AS current_streak
+     FROM enrollments en
+     JOIN users u        ON u.id = en.trainee_id
+     JOIN cohort_members cm ON cm.trainee_id = u.id AND cm.cohort_id = $2
+     JOIN exercises ex   ON ex.workshop_id = en.workshop_id
+     JOIN submissions s  ON s.exercise_id = ex.id AND s.trainee_id = u.id
+     JOIN scores sc      ON sc.submission_id = s.id
+     LEFT JOIN user_badges ub ON ub.trainee_id = u.id
+     LEFT JOIN streaks st     ON st.trainee_id = u.id
+     WHERE en.workshop_id = $1
+     GROUP BY u.id, u.display_name, st.current_streak
+     ORDER BY AVG(sc.total_score / sc.max_score) DESC, COUNT(DISTINCT s.exercise_id) DESC`;
+    leaderboardParams = [workshopId, cohortId];
+  } else {
+    leaderboardQuery = `SELECT
        u.id                                               AS trainee_id,
        u.display_name,
        ROUND(AVG(sc.total_score / sc.max_score * 100), 1)::text AS avg_score_pct,
@@ -70,9 +96,18 @@ export default async function WorkshopLeaderboardPage({
      LEFT JOIN streaks st     ON st.trainee_id = u.id
      WHERE en.workshop_id = $1
      GROUP BY u.id, u.display_name, st.current_streak
-     ORDER BY AVG(sc.total_score / sc.max_score) DESC, COUNT(DISTINCT s.exercise_id) DESC`,
-    [workshopId]
-  );
+     ORDER BY AVG(sc.total_score / sc.max_score) DESC, COUNT(DISTINCT s.exercise_id) DESC`;
+    leaderboardParams = [workshopId];
+  }
+
+  const result = await pool.query<{
+    trainee_id: string;
+    display_name: string;
+    avg_score_pct: string;
+    exercises_completed: string;
+    badge_count: string;
+    current_streak: string | null;
+  }>(leaderboardQuery, leaderboardParams);
 
   const leaderboard: LeaderboardRow[] = result.rows.map((row, idx) => ({
     trainee_id: row.trainee_id,
@@ -116,6 +151,35 @@ export default async function WorkshopLeaderboardPage({
           <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Leaderboard</h1>
           <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">{workshop.title}</p>
         </div>
+
+        {/* Cohort filter tabs */}
+        {cohorts.length > 0 && (
+          <div className="mb-6 flex flex-wrap gap-2">
+            <Link
+              href={`/workshops/${workshopId}/leaderboard`}
+              className={`rounded-full px-4 py-1.5 text-sm font-medium transition-colors ${
+                !cohortId
+                  ? "bg-blue-600 text-white"
+                  : "border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:border-blue-300 dark:hover:border-blue-600"
+              }`}
+            >
+              All
+            </Link>
+            {cohorts.map((c) => (
+              <Link
+                key={c.id}
+                href={`/workshops/${workshopId}/leaderboard?cohort_id=${c.id}`}
+                className={`rounded-full px-4 py-1.5 text-sm font-medium transition-colors ${
+                  cohortId === c.id
+                    ? "bg-blue-600 text-white"
+                    : "border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:border-blue-300 dark:hover:border-blue-600"
+                }`}
+              >
+                {c.name}
+              </Link>
+            ))}
+          </div>
+        )}
 
         {/* Current user's rank summary */}
         {currentUserRank && (

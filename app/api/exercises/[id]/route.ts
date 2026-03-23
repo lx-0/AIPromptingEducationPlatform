@@ -48,6 +48,9 @@ export async function PATCH(
     difficulty,
     constraints,
     steps,
+    open_at,
+    close_at,
+    criterion_weights,
   } = body;
 
   const setClauses: string[] = [];
@@ -63,6 +66,9 @@ export async function PATCH(
   if (exercise_type !== undefined) { setClauses.push(`exercise_type = $${paramIdx++}`); values.push(exercise_type); }
   if (difficulty !== undefined) { setClauses.push(`difficulty = $${paramIdx++}`); values.push(difficulty); }
   if (constraints !== undefined) { setClauses.push(`constraints = $${paramIdx++}`); values.push(JSON.stringify(constraints)); }
+  if (open_at !== undefined) { setClauses.push(`open_at = $${paramIdx++}`); values.push(open_at ?? null); }
+  if (close_at !== undefined) { setClauses.push(`close_at = $${paramIdx++}`); values.push(close_at ?? null); }
+  if (criterion_weights !== undefined) { setClauses.push(`criterion_weights = $${paramIdx++}`); values.push(JSON.stringify(criterion_weights)); }
 
   if (setClauses.length === 0 && steps === undefined) {
     return NextResponse.json({ error: "No fields to update" }, { status: 400 });

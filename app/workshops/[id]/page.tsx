@@ -6,6 +6,7 @@ import { getSession } from "@/lib/session";
 import pool from "@/lib/db";
 import ThemeToggle from "@/components/ThemeToggle";
 import SocialShareButtons from "@/components/SocialShareButtons";
+import InstructorPowerTools from "@/components/InstructorPowerTools";
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
 
@@ -97,6 +98,20 @@ type ExerciseStat = {
   avg_score_pct: string | null;
 };
 
+type Cohort = {
+  id: string;
+  name: string;
+  member_count: number;
+};
+
+type Announcement = {
+  id: string;
+  title: string;
+  body: string;
+  created_at: string;
+  instructor_name: string;
+};
+
 export default async function WorkshopDetailPage({
   params,
 }: {
@@ -163,6 +178,33 @@ export default async function WorkshopDetailPage({
     ]);
     workshopStats = statsResult.rows[0] ?? null;
     exerciseStats = exerciseStatsResult.rows;
+  }
+
+  // Load instructor power tools data
+  let cohorts: Cohort[] = [];
+  let announcements: Announcement[] = [];
+  if (isOwner) {
+    const [cohortsResult, announcementsResult] = await Promise.all([
+      pool.query<Cohort>(
+        `SELECT c.id, c.name, COUNT(cm.trainee_id)::int AS member_count
+         FROM cohorts c
+         LEFT JOIN cohort_members cm ON cm.cohort_id = c.id
+         WHERE c.workshop_id = $1
+         GROUP BY c.id
+         ORDER BY c.created_at ASC`,
+        [id]
+      ),
+      pool.query<Announcement>(
+        `SELECT a.id, a.title, a.body, a.created_at, p.display_name AS instructor_name
+         FROM announcements a
+         JOIN profiles p ON p.id = a.instructor_id
+         WHERE a.workshop_id = $1
+         ORDER BY a.created_at DESC`,
+        [id]
+      ),
+    ]);
+    cohorts = cohortsResult.rows;
+    announcements = announcementsResult.rows;
   }
 
   // Check if current trainee has any submissions in this workshop
@@ -405,6 +447,15 @@ export default async function WorkshopDetailPage({
             </ol>
           )}
         </div>
+
+        {/* Instructor power tools */}
+        {isOwner && (
+          <InstructorPowerTools
+            workshopId={id}
+            cohorts={cohorts}
+            announcements={announcements}
+          />
+        )}
 
         {/* Reviews */}
         {workshop.status === "published" && (

@@ -13,7 +13,7 @@ type LeaderboardRow = {
 };
 
 export async function GET(
-  _request: Request,
+  request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id: workshopId } = await params;
@@ -23,17 +23,37 @@ export async function GET(
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
+  const { searchParams } = new URL(request.url);
+  const cohortId = searchParams.get("cohort_id");
+
   // Leaderboard: trainees enrolled in this workshop ranked by avg score
+  // Optional cohort_id parameter restricts to trainees in that cohort.
   // Opt-in: only include trainees who have at least one scored submission
-  const result = await pool.query<{
-    trainee_id: string;
-    display_name: string;
-    avg_score_pct: string;
-    exercises_completed: string;
-    badge_count: string;
-    current_streak: string | null;
-  }>(
-    `SELECT
+  let queryText: string;
+  let queryParams: unknown[];
+
+  if (cohortId) {
+    queryText = `SELECT
+       u.id                                               AS trainee_id,
+       u.display_name,
+       ROUND(AVG(sc.total_score / sc.max_score * 100), 1)::text AS avg_score_pct,
+       COUNT(DISTINCT s.exercise_id)::text               AS exercises_completed,
+       COUNT(DISTINCT ub.id)::text                       AS badge_count,
+       st.current_streak::text                           AS current_streak
+     FROM enrollments en
+     JOIN users u        ON u.id = en.trainee_id
+     JOIN cohort_members cm ON cm.trainee_id = u.id AND cm.cohort_id = $2
+     JOIN exercises ex   ON ex.workshop_id = en.workshop_id
+     JOIN submissions s  ON s.exercise_id = ex.id AND s.trainee_id = u.id
+     JOIN scores sc      ON sc.submission_id = s.id
+     LEFT JOIN user_badges ub ON ub.trainee_id = u.id
+     LEFT JOIN streaks st     ON st.trainee_id = u.id
+     WHERE en.workshop_id = $1
+     GROUP BY u.id, u.display_name, st.current_streak
+     ORDER BY AVG(sc.total_score / sc.max_score) DESC, COUNT(DISTINCT s.exercise_id) DESC`;
+    queryParams = [workshopId, cohortId];
+  } else {
+    queryText = `SELECT
        u.id                                               AS trainee_id,
        u.display_name,
        ROUND(AVG(sc.total_score / sc.max_score * 100), 1)::text AS avg_score_pct,
@@ -49,9 +69,18 @@ export async function GET(
      LEFT JOIN streaks st     ON st.trainee_id = u.id
      WHERE en.workshop_id = $1
      GROUP BY u.id, u.display_name, st.current_streak
-     ORDER BY AVG(sc.total_score / sc.max_score) DESC, COUNT(DISTINCT s.exercise_id) DESC`,
-    [workshopId]
-  );
+     ORDER BY AVG(sc.total_score / sc.max_score) DESC, COUNT(DISTINCT s.exercise_id) DESC`;
+    queryParams = [workshopId];
+  }
+
+  const result = await pool.query<{
+    trainee_id: string;
+    display_name: string;
+    avg_score_pct: string;
+    exercises_completed: string;
+    badge_count: string;
+    current_streak: string | null;
+  }>(queryText, queryParams);
 
   const rows: LeaderboardRow[] = result.rows.map((row, idx) => ({
     trainee_id: row.trainee_id,

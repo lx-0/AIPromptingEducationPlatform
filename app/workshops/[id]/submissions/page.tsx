@@ -3,6 +3,7 @@ import Link from "next/link";
 import { getSession } from "@/lib/session";
 import pool from "@/lib/db";
 import ThemeToggle from "@/components/ThemeToggle";
+import SubmissionsTable from "./SubmissionsTable";
 
 type Submission = {
   id: string;
@@ -12,6 +13,8 @@ type Submission = {
   exercise_title: string;
   total_score: number | null;
   max_score: number | null;
+  override_score: number | null;
+  override_reason: string | null;
 };
 
 type Workshop = {
@@ -53,11 +56,14 @@ export default async function SubmissionsPage({
        u.display_name AS trainee_name,
        e.title AS exercise_title,
        sc.total_score,
-       sc.max_score
+       sc.max_score,
+       so.total_score AS override_score,
+       so.reason AS override_reason
      FROM submissions s
      JOIN exercises e ON s.exercise_id = e.id
      JOIN users u ON s.trainee_id = u.id
      LEFT JOIN scores sc ON sc.submission_id = s.id
+     LEFT JOIN score_overrides so ON so.submission_id = s.id
      WHERE e.workshop_id = $1
      ORDER BY s.submitted_at DESC`,
     [id]
@@ -114,48 +120,7 @@ export default async function SubmissionsPage({
             <p className="text-sm">No submissions yet.</p>
           </div>
         ) : (
-          <div className="mt-6 overflow-x-auto rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900">
-            <table className="w-full text-sm min-w-[600px]">
-              <thead>
-                <tr className="border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800">
-                  <th className="px-4 py-3 text-left font-medium text-gray-600 dark:text-gray-400">Trainee</th>
-                  <th className="px-4 py-3 text-left font-medium text-gray-600 dark:text-gray-400">Exercise</th>
-                  <th className="px-4 py-3 text-left font-medium text-gray-600 dark:text-gray-400">Prompt</th>
-                  <th className="px-4 py-3 text-left font-medium text-gray-600 dark:text-gray-400">Score</th>
-                  <th className="px-4 py-3 text-left font-medium text-gray-600 dark:text-gray-400">Submitted</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
-                {submissions.map((sub) => (
-                  <tr key={sub.id} className="hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
-                    <td className="px-4 py-3 font-medium text-gray-900 dark:text-gray-100 whitespace-nowrap">
-                      {sub.trainee_name}
-                    </td>
-                    <td className="px-4 py-3 text-gray-700 dark:text-gray-300 whitespace-nowrap">
-                      {sub.exercise_title}
-                    </td>
-                    <td className="px-4 py-3 text-gray-600 dark:text-gray-400 max-w-xs">
-                      <span className="block truncate" title={sub.prompt_text}>
-                        {sub.prompt_text}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 whitespace-nowrap">
-                      {sub.total_score != null && sub.max_score != null ? (
-                        <span className="inline-flex items-center rounded-full bg-blue-50 dark:bg-blue-950 px-2.5 py-0.5 text-xs font-medium text-blue-700 dark:text-blue-300">
-                          {sub.total_score}/{sub.max_score}
-                        </span>
-                      ) : (
-                        <span className="text-gray-400 dark:text-gray-500 text-xs">Pending</span>
-                      )}
-                    </td>
-                    <td className="px-4 py-3 text-gray-500 dark:text-gray-400 whitespace-nowrap">
-                      {new Date(sub.submitted_at).toLocaleString()}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <SubmissionsTable submissions={submissions} />
         )}
       </div>
     </main>

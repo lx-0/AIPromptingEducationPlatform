@@ -6,6 +6,8 @@ import ExerciseClient from "./ExerciseClient";
 import ThemeToggle from "@/components/ThemeToggle";
 import DiscussionThread from "@/components/DiscussionThread";
 import NotificationBell from "@/components/NotificationBell";
+import ExerciseScheduling from "@/components/ExerciseScheduling";
+import SubmissionWindowCountdown from "@/components/SubmissionWindowCountdown";
 
 type ExerciseType = "standard" | "multi_step" | "comparison" | "constrained";
 
@@ -19,6 +21,9 @@ type Exercise = {
   exercise_type: ExerciseType;
   difficulty: "beginner" | "intermediate" | "advanced";
   constraints: { char_limit?: number; forbidden_words?: string[]; required_keywords?: string[] };
+  open_at: string | null;
+  close_at: string | null;
+  criterion_weights: Record<string, number>;
 };
 
 type ExerciseStep = {
@@ -43,7 +48,9 @@ export default async function ExercisePage({
     `SELECT e.id, e.title, e.instructions, e.rubric, e.workshop_id, w.instructor_id,
             COALESCE(e.exercise_type, 'standard') AS exercise_type,
             COALESCE(e.difficulty, 'beginner') AS difficulty,
-            COALESCE(e.constraints, '{}') AS constraints
+            COALESCE(e.constraints, '{}') AS constraints,
+            e.open_at, e.close_at,
+            COALESCE(e.criterion_weights, '{}') AS criterion_weights
      FROM exercises e
      JOIN workshops w ON w.id = e.workshop_id
      WHERE e.id = $1 AND e.workshop_id = $2`,
@@ -121,7 +128,25 @@ export default async function ExercisePage({
           )}
         </div>
 
+        {/* Submission window countdown for trainees */}
+        {!isOwner && (exercise.open_at || exercise.close_at) && (
+          <div className="mb-6">
+            <SubmissionWindowCountdown openAt={exercise.open_at} closeAt={exercise.close_at} />
+          </div>
+        )}
+
         <ExerciseClient exercise={exerciseWithSteps} workshopId={id} />
+
+        {/* Scheduling panel for instructors */}
+        {isOwner && (
+          <div className="mt-8">
+            <ExerciseScheduling
+              exerciseId={exerciseId}
+              openAt={exercise.open_at}
+              closeAt={exercise.close_at}
+            />
+          </div>
+        )}
 
         <DiscussionThread
           exerciseId={exerciseId}
