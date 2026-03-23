@@ -24,7 +24,11 @@ export default async function WorkshopsPage() {
        EXISTS(
          SELECT 1 FROM enrollments
          WHERE workshop_id = w.id AND trainee_id = $1
-       ) AS is_enrolled
+       ) AS is_enrolled,
+       COALESCE(
+         ARRAY_AGG(DISTINCT e.difficulty) FILTER (WHERE e.difficulty IS NOT NULL),
+         ARRAY[]::text[]
+       ) AS difficulties
      FROM workshops w
      JOIN users u ON u.id = w.instructor_id
      LEFT JOIN exercises e ON e.workshop_id = w.id

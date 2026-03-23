@@ -5,6 +5,8 @@ import pool from "@/lib/db";
 import ExerciseClient from "./ExerciseClient";
 import ThemeToggle from "@/components/ThemeToggle";
 
+type ExerciseType = "standard" | "multi_step" | "comparison" | "constrained";
+
 type Exercise = {
   id: string;
   title: string;
@@ -12,6 +14,15 @@ type Exercise = {
   rubric: { criterion: string; max_points: number; description?: string }[];
   workshop_id: string;
   instructor_id: string;
+  exercise_type: ExerciseType;
+  difficulty: "beginner" | "intermediate" | "advanced";
+  constraints: { char_limit?: number; forbidden_words?: string[]; required_keywords?: string[] };
+};
+
+type ExerciseStep = {
+  step_number: number;
+  instructions: string;
+  system_prompt: string | null;
 };
 
 export default async function ExercisePage({
@@ -27,7 +38,10 @@ export default async function ExercisePage({
   }
 
   const result = await pool.query<Exercise>(
-    `SELECT e.id, e.title, e.instructions, e.rubric, e.workshop_id, w.instructor_id
+    `SELECT e.id, e.title, e.instructions, e.rubric, e.workshop_id, w.instructor_id,
+            COALESCE(e.exercise_type, 'standard') AS exercise_type,
+            COALESCE(e.difficulty, 'beginner') AS difficulty,
+            COALESCE(e.constraints, '{}') AS constraints
      FROM exercises e
      JOIN workshops w ON w.id = e.workshop_id
      WHERE e.id = $1 AND e.workshop_id = $2`,
@@ -39,9 +53,21 @@ export default async function ExercisePage({
     notFound();
   }
 
+  // Load steps for multi-step exercises
+  let steps: ExerciseStep[] = [];
+  if (exercise.exercise_type === "multi_step") {
+    const stepsResult = await pool.query<ExerciseStep>(
+      "SELECT step_number, instructions, system_prompt FROM exercise_steps WHERE exercise_id = $1 ORDER BY step_number ASC",
+      [exerciseId]
+    );
+    steps = stepsResult.rows;
+  }
+
   const isOwner =
     session.role === "instructor" &&
     exercise.instructor_id === session.userId;
+
+  const exerciseWithSteps = { ...exercise, steps };
 
   return (
     <main id="main-content" className="min-h-screen bg-gray-50 dark:bg-gray-950">
@@ -92,7 +118,7 @@ export default async function ExercisePage({
           )}
         </div>
 
-        <ExerciseClient exercise={exercise} workshopId={id} />
+        <ExerciseClient exercise={exerciseWithSteps} workshopId={id} />
       </div>
     </main>
   );

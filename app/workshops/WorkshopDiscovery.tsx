@@ -13,9 +13,17 @@ export type WorkshopSummary = {
   enrollment_count: number;
   is_enrolled: boolean;
   created_at: string;
+  difficulties: ("beginner" | "intermediate" | "advanced")[];
 };
 
 type SortOption = "newest" | "popular" | "alphabetical";
+type DifficultyFilter = "all" | "beginner" | "intermediate" | "advanced";
+
+const DIFFICULTY_COLORS = {
+  beginner: "bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300",
+  intermediate: "bg-yellow-100 dark:bg-yellow-900 text-yellow-700 dark:text-yellow-300",
+  advanced: "bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300",
+} as const;
 
 export default function WorkshopDiscovery({
   workshops: initialWorkshops,
@@ -24,6 +32,7 @@ export default function WorkshopDiscovery({
 }) {
   const [query, setQuery] = useState("");
   const [sort, setSort] = useState<SortOption>("newest");
+  const [difficultyFilter, setDifficultyFilter] = useState<DifficultyFilter>("all");
   const [enrolling, setEnrolling] = useState<string | null>(null);
   const [enrolledIds, setEnrolledIds] = useState<Set<string>>(
     () => new Set(initialWorkshops.filter((w) => w.is_enrolled).map((w) => w.id))
@@ -42,6 +51,12 @@ export default function WorkshopDiscovery({
         )
       : [...initialWorkshops];
 
+    if (difficultyFilter !== "all") {
+      result = result.filter((w) =>
+        w.difficulties && w.difficulties.includes(difficultyFilter)
+      );
+    }
+
     if (sort === "newest") {
       result.sort((a, b) => b.created_at.localeCompare(a.created_at));
     } else if (sort === "popular") {
@@ -51,7 +66,7 @@ export default function WorkshopDiscovery({
     }
 
     return result;
-  }, [initialWorkshops, query, sort]);
+  }, [initialWorkshops, query, sort, difficultyFilter]);
 
   async function handleEnroll(workshopId: string) {
     setEnrolling(workshopId);
@@ -76,7 +91,7 @@ export default function WorkshopDiscovery({
 
   return (
     <div>
-      {/* Search and sort bar */}
+      {/* Search, filter, and sort bar */}
       <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="relative flex-1 max-w-md">
           <svg
@@ -98,20 +113,46 @@ export default function WorkshopDiscovery({
           />
         </div>
 
-        <div className="flex items-center gap-2">
-          <label htmlFor="sort" className="text-xs text-gray-500 shrink-0">
-            Sort by
-          </label>
-          <select
-            id="sort"
-            value={sort}
-            onChange={(e) => setSort(e.target.value as SortOption)}
-            className="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 py-2 pl-3 pr-8 text-sm text-gray-700 dark:text-gray-300 focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-100 dark:focus:ring-blue-900"
-          >
-            <option value="newest">Newest</option>
-            <option value="popular">Most popular</option>
-            <option value="alphabetical">A–Z</option>
-          </select>
+        <div className="flex flex-wrap items-center gap-2">
+          {/* Difficulty filter chips */}
+          <div className="flex items-center gap-1.5" role="group" aria-label="Filter by difficulty">
+            {(["all", "beginner", "intermediate", "advanced"] as const).map((level) => (
+              <button
+                key={level}
+                type="button"
+                onClick={() => setDifficultyFilter(level)}
+                className={`rounded-full px-3 py-1 text-xs font-semibold transition-colors ${
+                  difficultyFilter === level
+                    ? level === "all"
+                      ? "bg-gray-700 text-white dark:bg-gray-200 dark:text-gray-900"
+                      : level === "beginner"
+                      ? "bg-green-600 text-white"
+                      : level === "intermediate"
+                      ? "bg-yellow-500 text-white"
+                      : "bg-red-600 text-white"
+                    : "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700"
+                }`}
+              >
+                {level === "all" ? "All levels" : level.charAt(0).toUpperCase() + level.slice(1)}
+              </button>
+            ))}
+          </div>
+
+          <div className="flex items-center gap-2">
+            <label htmlFor="sort" className="text-xs text-gray-500 shrink-0">
+              Sort by
+            </label>
+            <select
+              id="sort"
+              value={sort}
+              onChange={(e) => setSort(e.target.value as SortOption)}
+              className="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 py-2 pl-3 pr-8 text-sm text-gray-700 dark:text-gray-300 focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-100 dark:focus:ring-blue-900"
+            >
+              <option value="newest">Newest</option>
+              <option value="popular">Most popular</option>
+              <option value="alphabetical">A–Z</option>
+            </select>
+          </div>
         </div>
       </div>
 
@@ -156,7 +197,17 @@ export default function WorkshopDiscovery({
                       {workshop.description}
                     </p>
                   )}
-                  <div className="mt-4 flex items-center gap-3 text-xs text-gray-400 dark:text-gray-500">
+                  <div className="mt-3 flex flex-wrap gap-1">
+                    {(workshop.difficulties ?? []).map((d) => (
+                      <span
+                        key={d}
+                        className={`rounded-full px-2 py-0.5 text-xs font-semibold ${DIFFICULTY_COLORS[d]}`}
+                      >
+                        {d.charAt(0).toUpperCase() + d.slice(1)}
+                      </span>
+                    ))}
+                  </div>
+                  <div className="mt-3 flex items-center gap-3 text-xs text-gray-400 dark:text-gray-500">
                     <span className="font-medium text-gray-600 dark:text-gray-400">{workshop.instructor_name}</span>
                     <span>·</span>
                     <span>

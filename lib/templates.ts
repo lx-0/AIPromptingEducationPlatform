@@ -590,6 +590,603 @@ You need factual information about **the TCP/IP model** for a technical blog pos
       },
     ],
   },
+  {
+    id: "everyday-ai-assistant",
+    name: "Your Everyday AI Assistant",
+    description:
+      "A hands-on workshop for anyone who wants to use AI more effectively in daily work. Practice prompting for summaries, brainstorming, email drafting, and decision-making — no technical background required.",
+    difficulty: "beginner",
+    estimatedMinutes: 40,
+    exercises: [
+      {
+        title: "Summarize Like a Pro",
+        instructions: `Write a prompt that asks the AI to summarize a long piece of text for a specific purpose.
+
+**Task:**
+Summarize the following meeting notes into a concise action-item list that a busy manager can scan in 30 seconds:
+
+> "In today's product sync we discussed the Q2 launch timeline. Maria said the design mockups will be ready by April 5th but flagged that the icon set still needs approval from brand. Jake confirmed the API integration is on track but raised a dependency on the auth team finishing the OAuth flow, expected April 10th. We agreed to move the internal beta from April 12th to April 15th to absorb the risk. Sarah will send the updated timeline to stakeholders by EOD Friday. Everyone should review the feature-flag plan before next Tuesday's standup."
+
+Your prompt should specify:
+- The output format (action items with owners and dates)
+- The audience (a manager who wasn't at the meeting)
+- Maximum length (5-7 bullet points)
+
+**Goal:** Learn to write prompts that turn messy information into clear, actionable summaries.`,
+        rubric: [
+          {
+            criterion: "Purpose Specification",
+            max_points: 10,
+            description:
+              "The prompt specifies the summary's purpose (action items), audience (busy manager), and constraints (length, format).",
+          },
+          {
+            criterion: "Output Clarity",
+            max_points: 10,
+            description:
+              "The AI response is a scannable list of action items with clear owners and deadlines.",
+          },
+          {
+            criterion: "Completeness",
+            max_points: 10,
+            description:
+              "All key action items from the meeting notes are captured without omitting important details.",
+          },
+        ],
+        model_config: {
+          model: "claude-haiku-4-5-20251001",
+          temperature: 0.3,
+          max_tokens: 512,
+        },
+      },
+      {
+        title: "Brainstorm Partner",
+        instructions: `Use the AI as a brainstorming partner to generate creative ideas.
+
+**Task:**
+You're planning a team offsite for 15 people. Write a prompt that generates 10 unique activity ideas. Your prompt should include:
+- The group size and mix (e.g., engineers, designers, PMs)
+- The goal of the offsite (e.g., team bonding, strategic planning, celebration)
+- Constraints (e.g., budget of $500, 3-hour time block, accessible for all fitness levels)
+- A request for variety (mix of indoor/outdoor, active/chill, creative/strategic)
+
+**Goal:** Learn to set constraints that make brainstorming output practical, not generic.`,
+        rubric: [
+          {
+            criterion: "Constraint Setting",
+            max_points: 15,
+            description:
+              "The prompt provides clear constraints: group details, goals, budget, time, and accessibility needs.",
+          },
+          {
+            criterion: "Idea Variety",
+            max_points: 10,
+            description:
+              "The AI generates genuinely diverse ideas — not 10 variations of the same thing.",
+          },
+          {
+            criterion: "Practical Feasibility",
+            max_points: 5,
+            description:
+              "The ideas respect the stated constraints (budget, time, accessibility) and could realistically be executed.",
+          },
+        ],
+        model_config: {
+          model: "claude-haiku-4-5-20251001",
+          temperature: 0.8,
+          max_tokens: 600,
+        },
+      },
+      {
+        title: "Email Drafter",
+        instructions: `Write a prompt that drafts a professional email for a sensitive situation.
+
+**Task:**
+You need to email a client to let them know that a project deliverable will be 2 weeks late. Write a prompt that produces a professional email. Your prompt should include:
+- The relationship context (long-term client, generally positive)
+- The reason for the delay (a key dependency was delayed, not negligence)
+- What you're doing to mitigate (revised timeline, added resources)
+- The tone you want (apologetic but confident, not groveling)
+- Length constraint (under 150 words)
+
+**Goal:** Practice prompt-driven writing for high-stakes communication where tone matters.`,
+        rubric: [
+          {
+            criterion: "Context Provided",
+            max_points: 10,
+            description:
+              "The prompt gives the AI enough situational context: relationship, reason, mitigation, and desired tone.",
+          },
+          {
+            criterion: "Tone Accuracy",
+            max_points: 15,
+            description:
+              "The AI's email strikes the right balance — professional, empathetic, and solution-oriented without excessive apology.",
+          },
+          {
+            criterion: "Constraint Adherence",
+            max_points: 5,
+            description:
+              "The email stays under 150 words and includes all required elements (acknowledgment, reason, next steps).",
+          },
+        ],
+        model_config: {
+          model: "claude-haiku-4-5-20251001",
+          temperature: 0.5,
+          max_tokens: 400,
+        },
+      },
+      {
+        title: "Decision Helper",
+        instructions: `Use AI to structure a decision with pros, cons, and a recommendation.
+
+**Task:**
+You're choosing between two project management tools for your team: **Tool A** (feature-rich, expensive, steep learning curve) and **Tool B** (simple, affordable, limited integrations). Write a prompt that asks the AI to:
+1. List 3 pros and 3 cons for each option
+2. Identify the most important factor to weigh
+3. Give a recommendation based on a team of 8 people, moderate budget, and a preference for fast onboarding
+
+Your prompt should make the AI's reasoning transparent — not just "pick B."
+
+**Goal:** Learn to use AI for structured decision-making that surfaces trade-offs clearly.`,
+        rubric: [
+          {
+            criterion: "Decision Framing",
+            max_points: 10,
+            description:
+              "The prompt clearly presents both options, the evaluation criteria, and the team's context.",
+          },
+          {
+            criterion: "Balanced Analysis",
+            max_points: 15,
+            description:
+              "The AI provides genuinely balanced pros and cons for both options — not a biased sell for one.",
+          },
+          {
+            criterion: "Recommendation Quality",
+            max_points: 5,
+            description:
+              "The recommendation follows logically from the stated constraints and the analysis, with transparent reasoning.",
+          },
+        ],
+        model_config: {
+          model: "claude-haiku-4-5-20251001",
+          temperature: 0.4,
+          max_tokens: 600,
+        },
+      },
+    ],
+  },
+  {
+    id: "prompt-debugging",
+    name: "Prompt Debugging & Iteration",
+    description:
+      "Learn what to do when your prompts don't work. Practice diagnosing vague, misleading, or overly complex prompts, then fix them systematically. The essential skill for going from 'meh' to 'wow' with AI.",
+    difficulty: "beginner",
+    estimatedMinutes: 35,
+    exercises: [
+      {
+        title: "Spot the Problem",
+        instructions: `Diagnose and fix a bad prompt.
+
+**Task:**
+The following prompt produces unhelpful results:
+
+> "Tell me about marketing."
+
+Rewrite this prompt so it produces a useful, specific response. Your improved prompt should:
+- Define what aspect of marketing you care about (e.g., social media strategy, email campaigns, brand positioning)
+- Specify who the advice is for (e.g., a solo founder, a Fortune 500 CMO, a nonprofit)
+- State the desired output format and length
+
+Submit **only** the improved version.
+
+**Goal:** Build the habit of diagnosing why a prompt fails and applying targeted fixes.`,
+        rubric: [
+          {
+            criterion: "Problem Diagnosis",
+            max_points: 10,
+            description:
+              "The rewritten prompt addresses the original's core problem: total lack of specificity.",
+          },
+          {
+            criterion: "Specificity Added",
+            max_points: 15,
+            description:
+              "The new prompt narrows the topic, audience, and format so the AI can give a targeted answer.",
+          },
+          {
+            criterion: "Response Quality",
+            max_points: 5,
+            description:
+              "The AI response is practical and relevant — a clear improvement over what the vague prompt would produce.",
+          },
+        ],
+        model_config: {
+          model: "claude-haiku-4-5-20251001",
+          temperature: 0.5,
+          max_tokens: 512,
+        },
+      },
+      {
+        title: "Too Much, Too Vague",
+        instructions: `Fix a prompt that tries to do too many things at once.
+
+**Task:**
+The following prompt is overloaded and produces scattered output:
+
+> "Write a blog post about artificial intelligence, cover its history, current applications in healthcare, education, and finance, discuss the ethical implications, predict what will happen in the next 10 years, and also give me 5 social media captions I can use to promote the post, make it fun and professional."
+
+Rewrite this as a **single focused prompt** that tackles one clear goal. Choose the most valuable piece (e.g., just the blog post, or just the social captions) and write a prompt that will produce a high-quality result for that one goal.
+
+**Goal:** Learn that less is more — focused prompts outperform kitchen-sink requests.`,
+        rubric: [
+          {
+            criterion: "Scope Reduction",
+            max_points: 15,
+            description:
+              "The rewritten prompt focuses on one clear deliverable rather than trying to do everything at once.",
+          },
+          {
+            criterion: "Clarity of Focus",
+            max_points: 10,
+            description:
+              "The prompt clearly defines the topic, audience, length, and tone for its chosen deliverable.",
+          },
+          {
+            criterion: "Output Improvement",
+            max_points: 5,
+            description:
+              "The AI response is coherent and polished — evidence that a focused prompt works better.",
+          },
+        ],
+        model_config: {
+          model: "claude-haiku-4-5-20251001",
+          temperature: 0.6,
+          max_tokens: 600,
+        },
+      },
+      {
+        title: "The Iteration Loop",
+        instructions: `Practice improving a prompt through multiple rounds.
+
+**Task:**
+Start with this baseline prompt:
+
+> "Give me a meal plan."
+
+Your job is to write an improved version that produces a genuinely useful meal plan. Build up your prompt by adding:
+1. **Who** it's for (dietary restrictions, goals, household size)
+2. **What** constraints matter (budget, prep time, grocery accessibility)
+3. **How** the output should be structured (daily breakdown, shopping list, calorie counts)
+
+Submit your final, polished prompt. The goal is not perfection on attempt one — it's showing you can layer specificity effectively.
+
+**Goal:** Internalize the iteration mindset: start simple, add detail, test, refine.`,
+        rubric: [
+          {
+            criterion: "Progressive Specificity",
+            max_points: 15,
+            description:
+              "The final prompt demonstrates clear layering: who, what constraints, and how to structure output.",
+          },
+          {
+            criterion: "Practical Constraints",
+            max_points: 10,
+            description:
+              "The prompt includes realistic constraints (budget, time, dietary needs) that shape useful output.",
+          },
+          {
+            criterion: "Output Usability",
+            max_points: 5,
+            description:
+              "The AI response is a meal plan someone could actually follow — not generic filler.",
+          },
+        ],
+        model_config: {
+          model: "claude-haiku-4-5-20251001",
+          temperature: 0.5,
+          max_tokens: 700,
+        },
+      },
+    ],
+  },
+  {
+    id: "creative-prompting",
+    name: "Creative Prompting",
+    description:
+      "Unlock AI as a creative collaborator. Practice prompting for storytelling, brainstorming, worldbuilding, and content ideation — with techniques to steer creativity without killing it.",
+    difficulty: "intermediate",
+    estimatedMinutes: 50,
+    exercises: [
+      {
+        title: "Storytelling Kickstart",
+        instructions: `Write a prompt that generates the opening paragraph of a compelling short story.
+
+**Task:**
+Ask the AI to write the first 100-150 words of a short story. Your prompt should specify:
+- The genre (e.g., sci-fi, mystery, literary fiction, horror)
+- The point of view (first person, third person limited, etc.)
+- The mood or tone (tense, whimsical, melancholic, etc.)
+- A "hook" requirement — the opening must make the reader want to continue
+- One specific sensory detail to include (e.g., "the smell of burnt coffee" or "a flickering neon sign")
+
+**Goal:** Learn to guide creative output by constraining the right dimensions while leaving room for surprise.`,
+        rubric: [
+          {
+            criterion: "Creative Direction",
+            max_points: 10,
+            description:
+              "The prompt specifies genre, POV, tone, and a sensory anchor without over-constraining the content.",
+          },
+          {
+            criterion: "Hook Quality",
+            max_points: 15,
+            description:
+              "The AI's opening paragraph has a genuine hook — something that creates tension, curiosity, or emotional pull.",
+          },
+          {
+            criterion: "Constraint Fidelity",
+            max_points: 10,
+            description:
+              "The response honors the specified genre, POV, tone, and includes the requested sensory detail.",
+          },
+        ],
+        model_config: {
+          model: "claude-sonnet-4-6",
+          temperature: 0.9,
+          max_tokens: 400,
+        },
+      },
+      {
+        title: "Constrained Creativity",
+        instructions: `Use constraints to make AI-generated content more original.
+
+**Task:**
+Write a prompt that asks the AI to generate a product name and tagline for a fictional product, but with creative constraints:
+- The product: a smart notebook that digitizes handwritten notes in real time
+- Constraint 1: The name must be exactly two words
+- Constraint 2: The tagline must be under 8 words
+- Constraint 3: Neither the name nor tagline can use these overused words: "smart," "intelligent," "revolutionary," "innovative," "next-gen"
+- Ask for 5 options ranked by the AI's own assessment of memorability
+
+**Goal:** Discover that well-chosen constraints produce more creative output than open-ended "be creative" prompts.`,
+        rubric: [
+          {
+            criterion: "Constraint Design",
+            max_points: 10,
+            description:
+              "The prompt clearly states all constraints (word count, banned words, ranking requirement).",
+          },
+          {
+            criterion: "Creative Quality",
+            max_points: 15,
+            description:
+              "The generated names and taglines are genuinely creative and avoid the banned cliches.",
+          },
+          {
+            criterion: "Constraint Compliance",
+            max_points: 10,
+            description:
+              "All 5 options respect the two-word name limit, sub-8-word tagline, and banned word list.",
+          },
+        ],
+        model_config: {
+          model: "claude-sonnet-4-6",
+          temperature: 0.8,
+          max_tokens: 512,
+        },
+      },
+      {
+        title: "Worldbuilding Partner",
+        instructions: `Use AI to flesh out a fictional world with internal consistency.
+
+**Task:**
+You're building a fictional setting for a story or game. Write a prompt that asks the AI to generate a detailed description of a location in your world. Include:
+- A 1-2 sentence premise for your world (e.g., "A desert planet where water is currency" or "A city that exists entirely underground")
+- What you need described (e.g., the central marketplace, a forbidden zone, the ruler's palace)
+- Consistency constraints (must align with your world's rules — e.g., no surface references if the world is underground)
+- Request for 3 sensory details and 1 story hook embedded in the description
+
+**Goal:** Practice collaborative worldbuilding where the AI extends your vision without contradicting it.`,
+        rubric: [
+          {
+            criterion: "World Premise",
+            max_points: 10,
+            description:
+              "The prompt establishes a clear world premise with enough rules for the AI to maintain internal consistency.",
+          },
+          {
+            criterion: "Consistency",
+            max_points: 15,
+            description:
+              "The AI's location description is internally consistent with the world's rules — no contradictions.",
+          },
+          {
+            criterion: "Richness",
+            max_points: 10,
+            description:
+              "The description includes the requested sensory details and story hook, making the location feel alive.",
+          },
+        ],
+        model_config: {
+          model: "claude-sonnet-4-6",
+          temperature: 0.8,
+          max_tokens: 700,
+        },
+      },
+      {
+        title: "Tone Remix",
+        instructions: `Transform existing content into a completely different tone while preserving the core message.
+
+**Task:**
+Take the following dry, formal paragraph and write a prompt that asks the AI to rewrite it in a specific creative tone of your choice:
+
+> "Quarterly revenue increased by 14% year-over-year, driven primarily by expansion in the enterprise segment. Customer acquisition costs decreased by 8%, while average contract value rose to $45,000. The company projects continued growth in the next fiscal quarter, contingent upon successful execution of the mid-market expansion strategy."
+
+Choose a tone that is dramatically different from the original. Examples:
+- A sports commentator narrating a championship game
+- A bedtime story for a 5-year-old
+- A dramatic movie trailer voiceover
+- A rapper's verse
+
+Your prompt should specify the tone clearly enough that anyone reading the AI's output would immediately recognize it.
+
+**Goal:** Master tone control — the ability to make AI write the same content in radically different voices.`,
+        rubric: [
+          {
+            criterion: "Tone Specification",
+            max_points: 10,
+            description:
+              "The prompt clearly defines the target tone with enough detail to guide a distinctive voice.",
+          },
+          {
+            criterion: "Tone Execution",
+            max_points: 15,
+            description:
+              "The AI's rewrite is unmistakably in the requested tone — vocabulary, rhythm, and framing all match.",
+          },
+          {
+            criterion: "Content Preservation",
+            max_points: 10,
+            description:
+              "Despite the tone shift, the core facts (14% growth, lower CAC, $45K ACV) are preserved.",
+          },
+        ],
+        model_config: {
+          model: "claude-sonnet-4-6",
+          temperature: 0.9,
+          max_tokens: 500,
+        },
+      },
+    ],
+  },
+  {
+    id: "responsible-prompting",
+    name: "Responsible AI Prompting",
+    description:
+      "Build habits for safe, ethical AI use. Learn to identify bias in outputs, verify factual claims, handle sensitive topics, and understand what AI should and shouldn't be used for.",
+    difficulty: "beginner",
+    estimatedMinutes: 35,
+    exercises: [
+      {
+        title: "Fact-Check Your AI",
+        instructions: `Write a prompt that asks for factual information with built-in verification guardrails.
+
+**Task:**
+You need to write a short briefing about **renewable energy adoption in Europe** for a presentation. Write a prompt that:
+1. Asks for 5 key statistics about renewable energy in Europe
+2. Instructs the AI to clearly label any statistic it is uncertain about
+3. Asks the AI to note which statistics may be outdated and should be verified
+4. Requests sources or source types (e.g., "Eurostat data," "IEA reports") the reader should check
+
+**Goal:** Build the habit of prompting AI to be transparent about confidence levels instead of presenting everything as fact.`,
+        rubric: [
+          {
+            criterion: "Verification Instructions",
+            max_points: 15,
+            description:
+              "The prompt explicitly asks the AI to flag uncertainty, note potentially outdated info, and suggest verification sources.",
+          },
+          {
+            criterion: "AI Transparency",
+            max_points: 10,
+            description:
+              "The AI response appropriately flags areas of uncertainty rather than presenting everything with false confidence.",
+          },
+          {
+            criterion: "Source Guidance",
+            max_points: 5,
+            description:
+              "The response suggests specific, legitimate source types where the reader can verify claims.",
+          },
+        ],
+        model_config: {
+          model: "claude-haiku-4-5-20251001",
+          temperature: 0.3,
+          max_tokens: 600,
+        },
+      },
+      {
+        title: "Detecting Bias in Output",
+        instructions: `Write a prompt and then evaluate the AI's response for potential bias.
+
+**Task:**
+Write a prompt asking the AI to describe the **ideal candidate** for a senior engineering manager position.
+
+Then, in the same prompt, add a second instruction: ask the AI to review its own description for any assumptions about gender, age, background, communication style, or cultural norms that might unintentionally exclude qualified candidates.
+
+**Goal:** Practice prompting AI to self-audit for bias — a critical skill for anyone using AI in hiring, evaluation, or people-related decisions.`,
+        rubric: [
+          {
+            criterion: "Self-Audit Instruction",
+            max_points: 15,
+            description:
+              "The prompt explicitly asks the AI to review its own output for bias across specific dimensions.",
+          },
+          {
+            criterion: "Bias Awareness",
+            max_points: 10,
+            description:
+              "The AI identifies genuine potential biases in its description (not just token disclaimers).",
+          },
+          {
+            criterion: "Inclusive Revision",
+            max_points: 5,
+            description:
+              "The self-audit leads to concrete suggestions for making the description more inclusive.",
+          },
+        ],
+        model_config: {
+          model: "claude-sonnet-4-6",
+          temperature: 0.4,
+          max_tokens: 700,
+        },
+      },
+      {
+        title: "Know When to Stop",
+        instructions: `Practice identifying when AI should NOT be the answer.
+
+**Task:**
+For each of the following scenarios, write a one-sentence prompt and then explain (in 2-3 sentences) whether AI is appropriate to use, partially appropriate, or inappropriate — and why:
+
+1. Drafting a first version of a marketing email
+2. Diagnosing a medical condition from symptoms
+3. Generating test data for a software demo
+4. Writing a legal contract clause
+5. Explaining a concept to a student
+
+Write a prompt that asks the AI to evaluate these 5 scenarios. Instruct it to categorize each as **appropriate**, **use with caution**, or **inappropriate**, with a brief justification for each.
+
+**Goal:** Develop judgment about AI's appropriate role — as a tool, not an authority.`,
+        rubric: [
+          {
+            criterion: "Categorization Instruction",
+            max_points: 10,
+            description:
+              "The prompt clearly requests categorization with the three-tier system and asks for justifications.",
+          },
+          {
+            criterion: "Judgment Quality",
+            max_points: 15,
+            description:
+              "The AI correctly identifies the medical and legal scenarios as requiring caution or being inappropriate for AI alone.",
+          },
+          {
+            criterion: "Nuance",
+            max_points: 5,
+            description:
+              "The justifications show nuance — e.g., 'use with caution + human review' rather than binary appropriate/inappropriate.",
+          },
+        ],
+        model_config: {
+          model: "claude-haiku-4-5-20251001",
+          temperature: 0.3,
+          max_tokens: 600,
+        },
+      },
+    ],
+  },
 ];
 
 export function getTemplateById(id: string): WorkshopTemplate | undefined {
