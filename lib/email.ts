@@ -241,6 +241,56 @@ export async function sendWorkshopPublishedEmail(
   );
 }
 
+export async function sendCertificateEmail(
+  to: string,
+  displayName: string,
+  entityTitle: string,
+  entityType: "workshop" | "learning_path",
+  verificationCode: string,
+  scorePct: number | null
+): Promise<void> {
+  const certUrl = `${APP_URL}/certificates/${verificationCode}`;
+  const typeLabel = entityType === "workshop" ? "workshop" : "learning path";
+
+  const content = `
+    <h1 style="margin:0 0 8px;font-size:22px;font-weight:700;color:#111827;">
+      🎓 You've earned a certificate!
+    </h1>
+    <p style="margin:0 0 20px;font-size:15px;color:#374151;line-height:1.6;">
+      Congratulations, <strong>${escHtml(displayName)}</strong>! You've successfully
+      completed the ${typeLabel} <strong>${escHtml(entityTitle)}</strong>.
+    </p>
+    ${
+      scorePct !== null
+        ? `<div style="background:#eff6ff;border-radius:10px;padding:16px 24px;
+                    margin-bottom:24px;border:1px solid #bfdbfe;text-align:center;">
+             <p style="margin:0;font-size:36px;font-weight:800;color:#2563eb;">
+               ${scorePct}%
+             </p>
+             <p style="margin:4px 0 0;font-size:13px;color:#9ca3af;">Final score</p>
+           </div>`
+        : ""
+    }
+    <p style="margin:0 0 24px;font-size:15px;color:#374151;line-height:1.6;">
+      Your certificate is ready to view, download as PDF, and share on LinkedIn.
+    </p>
+    <a href="${certUrl}"
+       style="display:inline-block;background:#2563eb;color:#ffffff;
+              font-size:14px;font-weight:600;text-decoration:none;
+              padding:12px 24px;border-radius:8px;">
+      View Certificate
+    </a>
+    <p style="margin:20px 0 0;font-size:13px;color:#9ca3af;">
+      Keep going — more workshops await you!
+    </p>`;
+
+  await sendEmail(
+    to,
+    `Certificate earned: ${entityTitle}`,
+    baseTemplate(content)
+  );
+}
+
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------

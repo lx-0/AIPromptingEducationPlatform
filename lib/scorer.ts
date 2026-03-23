@@ -1,5 +1,10 @@
 import pool from "@/lib/db";
 import { getProvider } from "@/lib/llm-providers";
+import {
+  maybeIssueWorkshopCertificate,
+  maybeIssueLearningPathCertificates,
+} from "@/lib/certificates";
+import { sendCertificateEmail } from "@/lib/email";
 
 type RubricCriterion = {
   criterion: string;
@@ -35,8 +40,8 @@ export async function scoreSubmission(
 ): Promise<ScoreResult> {
   // Load submission with exercise rubric and instructions
   const result = await pool.query(
-    `SELECT s.id, s.prompt_text, s.llm_response,
-            e.instructions, e.rubric
+    `SELECT s.id, s.prompt_text, s.llm_response, s.trainee_id,
+            e.instructions, e.rubric, e.workshop_id
      FROM submissions s
      JOIN exercises e ON e.id = s.exercise_id
      WHERE s.id = $1`,
@@ -57,6 +62,12 @@ export async function scoreSubmission(
        VALUES ($1, 1, 1, $2)
        RETURNING id, submission_id, total_score, max_score, feedback, scored_at`,
       [submissionId, JSON.stringify({ criteria: [], overall: "No rubric defined." })]
+    );
+    void maybeIssueCertificatesAfterScore(
+      row.trainee_id as string,
+      row.workshop_id as string,
+      1,
+      1
     );
     return scoreRow.rows[0];
   }
@@ -136,5 +147,68 @@ Score each criterion from 0 to its max points. Be fair but rigorous.`;
     [submissionId, totalScore, maxScore, JSON.stringify(feedback)]
   );
 
+  // After scoring, try to auto-issue a certificate (fire-and-forget, non-blocking)
+  void maybeIssueCertificatesAfterScore(
+    row.trainee_id as string,
+    row.workshop_id as string,
+    totalScore,
+    maxScore
+  );
+
   return scoreRow.rows[0];
+}
+
+async function maybeIssueCertificatesAfterScore(
+  traineeId: string,
+  workshopId: string,
+  totalScore: number,
+  maxScore: number
+): Promise<void> {
+  try {
+    // Attempt workshop certificate
+    const workshopCert = await maybeIssueWorkshopCertificate(
+      traineeId,
+      workshopId
+    );
+
+    if (workshopCert) {
+      // Notify trainee via email
+      const traineeResult = await pool.query<{ email: string; display_name: string }>(
+        "SELECT email, display_name FROM users WHERE id = $1",
+        [traineeId]
+      );
+      if (traineeResult.rows.length > 0) {
+        const { email, display_name } = traineeResult.rows[0];
+        const scorePct =
+          maxScore > 0 ? Math.round((totalScore / maxScore) * 100) : null;
+        await sendCertificateEmail(
+          email,
+          display_name,
+          workshopCert.entity_title,
+          "workshop",
+          workshopCert.verification_code,
+          scorePct
+        );
+      }
+
+      // Also try to issue learning path certificates
+      const pathCerts = await maybeIssueLearningPathCertificates(traineeId);
+      for (const pathCert of pathCerts) {
+        if (traineeResult.rows.length > 0) {
+          const { email, display_name } = traineeResult.rows[0];
+          await sendCertificateEmail(
+            email,
+            display_name,
+            pathCert.entity_title,
+            "learning_path",
+            pathCert.verification_code,
+            null
+          );
+        }
+      }
+    }
+  } catch (err) {
+    // Certificate issuance is best-effort — never fail a score because of this
+    console.error("[certificates] Failed to auto-issue certificate:", err);
+  }
 }

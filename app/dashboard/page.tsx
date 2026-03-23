@@ -292,7 +292,7 @@ export default async function DashboardPage() {
           )}
 
           {session.role === "trainee" && (
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <Link
                 href="/workshops"
                 className="block rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-6 hover:border-blue-300 dark:hover:border-blue-600 hover:shadow-sm transition-all text-center focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-gray-950"
@@ -306,6 +306,13 @@ export default async function DashboardPage() {
               >
                 <p className="text-sm font-semibold text-purple-600 dark:text-purple-400">Learning paths →</p>
                 <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">Follow a guided curriculum across multiple workshops.</p>
+              </Link>
+              <Link
+                href="/dashboard/certificates"
+                className="block rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-6 hover:border-yellow-300 dark:hover:border-yellow-600 hover:shadow-sm transition-all text-center focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:ring-offset-2 dark:focus:ring-offset-gray-950"
+              >
+                <p className="text-sm font-semibold text-yellow-600 dark:text-yellow-400">My certificates →</p>
+                <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">View and download certificates you&apos;ve earned.</p>
               </Link>
             </div>
           )}
