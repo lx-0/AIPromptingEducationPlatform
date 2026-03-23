@@ -37,7 +37,7 @@ export async function PATCH(
   }
 
   const body = await request.json();
-  const { title, description } = body;
+  const { title, description, category_id, is_featured } = body;
 
   const setClauses: string[] = [];
   const values: unknown[] = [];
@@ -50,6 +50,14 @@ export async function PATCH(
   if (description !== undefined) {
     setClauses.push(`description = $${paramIdx++}`);
     values.push(description);
+  }
+  if (category_id !== undefined) {
+    setClauses.push(`category_id = $${paramIdx++}`);
+    values.push(category_id || null);
+  }
+  if (is_featured !== undefined) {
+    setClauses.push(`is_featured = $${paramIdx++}`);
+    values.push(Boolean(is_featured));
   }
 
   if (setClauses.length === 0) {

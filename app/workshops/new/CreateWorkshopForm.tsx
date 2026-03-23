@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
 
@@ -8,13 +8,30 @@ const TemplateSelector = dynamic(() => import("@/components/TemplateSelector"), 
   ssr: false,
 });
 
+interface Category {
+  id: string;
+  name: string;
+  slug: string;
+  icon: string;
+}
+
 export default function CreateWorkshopForm() {
   const router = useRouter();
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
+  const [categoryId, setCategoryId] = useState("");
+  const [tagsInput, setTagsInput] = useState("");
+  const [categories, setCategories] = useState<Category[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [showTemplates, setShowTemplates] = useState(false);
+
+  useEffect(() => {
+    fetch("/api/categories")
+      .then((r) => r.json())
+      .then(setCategories)
+      .catch(() => {});
+  }, []);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -40,6 +57,26 @@ export default function CreateWorkshopForm() {
       }
 
       const workshop = await res.json();
+
+      // Set category if selected
+      if (categoryId) {
+        await fetch(`/api/workshops/${workshop.id}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ category_id: categoryId }),
+        });
+      }
+
+      // Set tags if provided
+      const tags = tagsInput.split(",").map((t) => t.trim()).filter(Boolean);
+      if (tags.length > 0) {
+        await fetch(`/api/workshops/${workshop.id}/tags`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ tags }),
+        });
+      }
+
       router.push(`/workshops/${workshop.id}`);
     } catch {
       setError("Network error. Please try again.");
@@ -113,6 +150,41 @@ export default function CreateWorkshopForm() {
             onChange={(e) => setDescription(e.target.value)}
             rows={3}
             placeholder="What will trainees learn in this workshop?"
+            className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-3 py-2 text-sm text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:border-blue-400 focus:outline-none dark:focus:border-blue-500"
+          />
+        </div>
+
+        {categories.length > 0 && (
+          <div>
+            <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300">
+              Category{" "}
+              <span className="text-xs font-normal text-gray-400 dark:text-gray-500">(optional)</span>
+            </label>
+            <select
+              value={categoryId}
+              onChange={(e) => setCategoryId(e.target.value)}
+              className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-3 py-2 text-sm text-gray-900 dark:text-gray-100 focus:border-blue-400 focus:outline-none dark:focus:border-blue-500"
+            >
+              <option value="">Select a category…</option>
+              {categories.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.icon} {c.name}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
+
+        <div>
+          <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300">
+            Tags{" "}
+            <span className="text-xs font-normal text-gray-400 dark:text-gray-500">(optional, comma-separated)</span>
+          </label>
+          <input
+            type="text"
+            value={tagsInput}
+            onChange={(e) => setTagsInput(e.target.value)}
+            placeholder="e.g. gpt-4, few-shot, summarization"
             className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-3 py-2 text-sm text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:border-blue-400 focus:outline-none dark:focus:border-blue-500"
           />
         </div>

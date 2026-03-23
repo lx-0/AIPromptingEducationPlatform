@@ -11,6 +11,8 @@ const PublishPanel = dynamic(() => import("./PublishPanel"), {
   ),
 });
 
+const ReviewSection = dynamic(() => import("./ReviewSection"), { ssr: false });
+
 type Exercise = {
   id: string;
   title: string;
@@ -108,6 +110,19 @@ export default async function WorkshopDetailPage({
     ]);
     workshopStats = statsResult.rows[0] ?? null;
     exerciseStats = exerciseStatsResult.rows;
+  }
+
+  // Check if current trainee has any submissions in this workshop
+  let traineeHasSubmissions = false;
+  if (session.role === "trainee") {
+    const subCheck = await pool.query(
+      `SELECT 1 FROM submissions sub
+       JOIN exercises ex ON ex.id = sub.exercise_id
+       WHERE ex.workshop_id = $1 AND sub.trainee_id = $2
+       LIMIT 1`,
+      [id, session.userId]
+    );
+    traineeHasSubmissions = subCheck.rows.length > 0;
   }
 
   const enrolledCount = workshopStats ? Number(workshopStats.enrolled_count) : 0;
@@ -312,6 +327,15 @@ export default async function WorkshopDetailPage({
             </ol>
           )}
         </div>
+
+        {/* Reviews */}
+        {workshop.status === "published" && (
+          <ReviewSection
+            workshopId={id}
+            isTrainee={session.role === "trainee"}
+            hasSubmissions={traineeHasSubmissions}
+          />
+        )}
       </div>
     </main>
   );
