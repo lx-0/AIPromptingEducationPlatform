@@ -4,6 +4,7 @@ import { getSession } from "@/lib/session";
 import pool from "@/lib/db";
 import AnalyticsChartsWrapper from "./AnalyticsChartsWrapper";
 import ThemeToggle from "@/components/ThemeToggle";
+import dynamic from "next/dynamic";
 import type {
   SubmissionTrendPoint,
   ScoreBucket,
@@ -11,6 +12,16 @@ import type {
   RubricWeakness,
   LeaderboardEntry,
 } from "./AnalyticsCharts";
+import type { CohortStat } from "./CohortComparison";
+
+const CohortComparisonWidget = dynamic(() => import("./CohortComparison"), {
+  ssr: false,
+  loading: () => (
+    <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-8 text-center text-sm text-gray-400">
+      Loading cohort data…
+    </div>
+  ),
+});
 
 type Workshop = {
   id: string;
@@ -61,6 +72,7 @@ export default async function AnalyticsPage({
     exerciseStatsResult,
     rubricResult,
     leaderboardResult,
+    cohortResult,
   ] = await Promise.all([
     // Overview
     pool.query<OverviewStats>(
@@ -182,6 +194,43 @@ export default async function AnalyticsPage({
        ORDER BY avg_score_pct DESC`,
       [id]
     ),
+
+    // Cohort comparison
+    pool.query<{
+      cohort_id: string;
+      cohort_name: string;
+      enrolled: string;
+      submitted: string;
+      completed: string;
+      avg_score_pct: string | null;
+    }>(
+      `SELECT
+         c.id AS cohort_id,
+         c.name AS cohort_name,
+         COUNT(DISTINCT cm.trainee_id)::text AS enrolled,
+         COUNT(DISTINCT s.trainee_id)::text AS submitted,
+         COALESCE((
+           SELECT COUNT(DISTINCT s2.trainee_id)::text
+           FROM cohort_members cm2
+           JOIN submissions s2 ON s2.trainee_id = cm2.trainee_id
+           JOIN exercises e2 ON s2.exercise_id = e2.id
+           WHERE cm2.cohort_id = c.id AND e2.workshop_id = $1
+           GROUP BY cm2.trainee_id
+           HAVING COUNT(DISTINCT s2.exercise_id) >= (
+             SELECT COUNT(*) FROM exercises WHERE workshop_id = $1
+           )
+         ), '0') AS completed,
+         ROUND(AVG(sc.total_score / NULLIF(sc.max_score, 0) * 100), 1)::text AS avg_score_pct
+       FROM cohorts c
+       JOIN cohort_members cm ON cm.cohort_id = c.id
+       LEFT JOIN submissions s ON s.trainee_id = cm.trainee_id
+         AND s.exercise_id IN (SELECT id FROM exercises WHERE workshop_id = $1)
+       LEFT JOIN scores sc ON sc.submission_id = s.id
+       WHERE c.workshop_id = $1
+       GROUP BY c.id, c.name
+       ORDER BY c.created_at ASC`,
+      [id]
+    ),
   ]);
 
   const overview = overviewResult.rows[0];
@@ -241,6 +290,15 @@ export default async function AnalyticsPage({
     display_name: r.display_name,
     avg_score_pct: Number(r.avg_score_pct),
     exercises_completed: Number(r.exercises_completed),
+  }));
+
+  const cohortStats: CohortStat[] = cohortResult.rows.map((r) => ({
+    cohort_id: r.cohort_id,
+    cohort_name: r.cohort_name,
+    enrolled: Number(r.enrolled),
+    submitted: Number(r.submitted),
+    completed: Number(r.completed),
+    avg_score_pct: r.avg_score_pct != null ? Number(r.avg_score_pct) : null,
   }));
 
   const hasData = Number(overview?.total_submissions ?? 0) > 0;
@@ -359,6 +417,29 @@ export default async function AnalyticsPage({
             leaderboard={leaderboard}
           />
         )}
+
+        {/* Cohort comparison */}
+        <section className="mt-10">
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-3">
+            Cohort Comparison
+          </h2>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
+            Compare score distributions and completion rates across cohorts in this workshop.
+          </p>
+          <CohortComparisonWidget cohorts={cohortStats} totalExercises={totalExercises} />
+        </section>
+
+        {/* PDF report link */}
+        <div className="mt-6 pt-4 border-t border-gray-200 dark:border-gray-700">
+          <a
+            href={`/api/workshops/${id}/report`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-4 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-300 hover:border-blue-300 dark:hover:border-blue-600 hover:text-blue-700 dark:hover:text-blue-400 transition-colors"
+          >
+            Download PDF Report
+          </a>
+        </div>
       </div>
     </main>
   );

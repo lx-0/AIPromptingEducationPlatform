@@ -51,6 +51,12 @@ export default async function AdminLayout({
                 >
                   Moderation
                 </Link>
+                <Link
+                  href="/admin/analytics"
+                  className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
+                >
+                  Analytics
+                </Link>
               </nav>
             </div>
             <div className="flex items-center gap-3">
