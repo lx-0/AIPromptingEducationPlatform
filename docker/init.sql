@@ -71,8 +71,9 @@ CREATE TABLE submissions (
   submitted_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
-CREATE INDEX idx_submissions_exercise_id ON submissions (exercise_id);
-CREATE INDEX idx_submissions_trainee_id  ON submissions (trainee_id);
+CREATE INDEX idx_submissions_exercise_id      ON submissions (exercise_id);
+CREATE INDEX idx_submissions_trainee_id       ON submissions (trainee_id);
+CREATE INDEX idx_submissions_trainee_submitted ON submissions (trainee_id, submitted_at DESC);
 
 -- ============================================================
 -- scores

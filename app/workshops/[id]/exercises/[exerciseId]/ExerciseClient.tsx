@@ -602,6 +602,57 @@ function StandardClient({
   const [streaming, setStreaming] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [violations, setViolations] = useState<string[]>([]);
+  const [pendingScoreId, setPendingScoreId] = useState<string | null>(null);
+
+  const onScoredRef = useRef(onScored);
+  const currentSubmissionRef = useRef(currentSubmission);
+  useEffect(() => { onScoredRef.current = onScored; });
+  useEffect(() => { currentSubmissionRef.current = currentSubmission; }, [currentSubmission]);
+
+  // Poll for async score when BullMQ is processing the job
+  useEffect(() => {
+    if (!pendingScoreId) return;
+    let cancelled = false;
+    const deadline = Date.now() + 30000;
+
+    const intervalId = setInterval(async () => {
+      if (cancelled || Date.now() > deadline) {
+        clearInterval(intervalId);
+        if (!cancelled) setPendingScoreId(null);
+        return;
+      }
+      try {
+        const res = await fetch(`/api/submissions/${pendingScoreId}/score`);
+        if (res.ok) {
+          const data = await res.json() as { pending?: boolean } & Score;
+          if (!data.pending) {
+            clearInterval(intervalId);
+            setCurrentScore(data);
+            setCurrentSubmission((prev) =>
+              prev
+                ? { ...prev, total_score: data.total_score, max_score: data.max_score, feedback: data.feedback }
+                : prev
+            );
+            const sub = currentSubmissionRef.current;
+            if (sub) {
+              onScoredRef.current(data, {
+                ...sub,
+                total_score: data.total_score,
+                max_score: data.max_score,
+                feedback: data.feedback,
+              });
+            }
+            setPendingScoreId(null);
+          }
+        }
+      } catch { /* retry next interval */ }
+    }, 2000);
+
+    return () => {
+      cancelled = true;
+      clearInterval(intervalId);
+    };
+  }, [pendingScoreId]);
 
   const isConstrained = exercise.exercise_type === "constrained";
 
@@ -687,7 +738,12 @@ function StandardClient({
 
       setCurrentSubmission(newSubmission);
       setStreaming("");
-      if (finalScore) onScored(finalScore, newSubmission);
+      if (finalScore) {
+        onScored(finalScore, newSubmission);
+      } else if (submissionId) {
+        // Async scoring via BullMQ — poll for result
+        setPendingScoreId(submissionId);
+      }
     } catch (err) {
       const message = err instanceof Error ? err.message : "Unexpected error";
       setError(message);
@@ -703,6 +759,7 @@ function StandardClient({
     setError(null);
     setViolations([]);
     setPrompt("");
+    setPendingScoreId(null);
     onTryAgain();
   }
 
@@ -772,7 +829,7 @@ function StandardClient({
         </section>
       )}
 
-      {loading && loadingPhase === "scoring" && (
+      {(loading && loadingPhase === "scoring" || pendingScoreId) && (
         <section className="rounded-xl border border-amber-100 dark:border-amber-900 bg-amber-50 dark:bg-amber-950 p-6">
           <div className="flex items-center gap-3">
             <LoadingSpinner className="h-5 w-5 text-amber-500 dark:text-amber-400" />
@@ -845,6 +902,54 @@ function MultiStepClient({
   const [error, setError] = useState<string | null>(null);
   const [finalScore, setFinalScore] = useState<Score | null>(null);
   const [done, setDone] = useState(false);
+  const [pendingScoreId, setPendingScoreId] = useState<string | null>(null);
+
+  const onScoredMsRef = useRef(onScored);
+  const stepOutputsRef = useRef(stepOutputs);
+  useEffect(() => { onScoredMsRef.current = onScored; });
+  useEffect(() => { stepOutputsRef.current = stepOutputs; }, [stepOutputs]);
+
+  // Poll for async score on last step
+  useEffect(() => {
+    if (!pendingScoreId) return;
+    let cancelled = false;
+    const deadline = Date.now() + 30000;
+
+    const intervalId = setInterval(async () => {
+      if (cancelled || Date.now() > deadline) {
+        clearInterval(intervalId);
+        if (!cancelled) setPendingScoreId(null);
+        return;
+      }
+      try {
+        const res = await fetch(`/api/submissions/${pendingScoreId}/score`);
+        if (res.ok) {
+          const data = await res.json() as { pending?: boolean } & Score;
+          if (!data.pending) {
+            clearInterval(intervalId);
+            setFinalScore(data);
+            const outputs = stepOutputsRef.current;
+            const submission: Submission = {
+              id: pendingScoreId,
+              prompt_text: `[Multi-step: ${totalSteps} steps]`,
+              llm_response: outputs[outputs.length - 1] ?? null,
+              submitted_at: new Date().toISOString(),
+              total_score: data.total_score,
+              max_score: data.max_score,
+              feedback: data.feedback,
+            };
+            onScoredMsRef.current(data, submission);
+            setPendingScoreId(null);
+          }
+        }
+      } catch { /* retry next interval */ }
+    }, 2000);
+
+    return () => {
+      cancelled = true;
+      clearInterval(intervalId);
+    };
+  }, [pendingScoreId, totalSteps]);
 
   const stepData = steps[currentStep];
 
@@ -895,6 +1000,7 @@ function MultiStepClient({
             error?: string;
             stepResponse?: string;
             isLastStep?: boolean;
+            submissionId?: string;
             score?: Score;
             newBadges?: BadgeMeta[];
             currentStreak?: number;
@@ -913,7 +1019,7 @@ function MultiStepClient({
               if (parsed.score) {
                 setFinalScore(parsed.score);
                 const submission: Submission = {
-                  id: "",
+                  id: parsed.submissionId ?? "",
                   prompt_text: `[Multi-step: ${totalSteps} steps]`,
                   llm_response: output,
                   submitted_at: new Date().toISOString(),
@@ -922,6 +1028,9 @@ function MultiStepClient({
                   feedback: parsed.score.feedback,
                 };
                 onScored(parsed.score, submission);
+              } else if (parsed.submissionId) {
+                // Async scoring via BullMQ — poll for result
+                setPendingScoreId(parsed.submissionId);
               }
               if (parsed.newBadges) onBadges(parsed.newBadges, parsed.currentStreak);
             } else {
@@ -947,6 +1056,7 @@ function MultiStepClient({
     setFinalScore(null);
     setDone(false);
     setError(null);
+    setPendingScoreId(null);
     onTryAgain();
   }
 
@@ -1043,6 +1153,15 @@ function MultiStepClient({
               <span className="inline-block w-1.5 h-4 bg-blue-400 motion-safe:animate-pulse ml-0.5 align-middle" />
             </div>
           )}
+        </section>
+      )}
+
+      {pendingScoreId && !finalScore && (
+        <section className="rounded-xl border border-amber-100 dark:border-amber-900 bg-amber-50 dark:bg-amber-950 p-6">
+          <div className="flex items-center gap-3">
+            <LoadingSpinner className="h-5 w-5 text-amber-500 dark:text-amber-400" />
+            <p className="text-sm font-semibold text-amber-800 dark:text-amber-300">Scoring your response…</p>
+          </div>
         </section>
       )}
 

@@ -1,15 +1,21 @@
 type LogLevel = "debug" | "info" | "warn" | "error";
 
+const LEVELS: Record<LogLevel, number> = { debug: 0, info: 1, warn: 2, error: 3 };
+const configuredLevel: LogLevel =
+  (process.env.LOG_LEVEL as LogLevel | undefined) ?? "info";
+const minLevel = LEVELS[configuredLevel] ?? LEVELS.info;
+
 interface LogEntry {
   timestamp: string;
   level: LogLevel;
   service: string;
-  correlationId?: string;
+  requestId?: string;
   message: string;
   [key: string]: unknown;
 }
 
 function log(level: LogLevel, message: string, meta: Record<string, unknown> = {}) {
+  if (LEVELS[level] < minLevel) return;
   const entry: LogEntry = {
     timestamp: new Date().toISOString(),
     level,

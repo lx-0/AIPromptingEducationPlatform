@@ -16,6 +16,8 @@
     "@anthropic-ai/sdk": "^0.78.0",
     "@google/generative-ai": "^0.24.1",
     "bcryptjs": "^3.0.2",
+    "bullmq": "^5.71.0",
+    "ioredis": "^5.10.1",
     "iron-session": "^8.0.3",
     "next": "16.1.6",
     "openai": "^6.32.0",
@@ -42,7 +44,7 @@
     "eslint": "^9",
     "eslint-config-next": "16.1.6",
     "playwright": "^1.58.2",
-    "tailwindcss": "^4.2.1",
+    "tailwindcss": "^4.2.2",
     "typescript": "^5.9.3",
     "vite-tsconfig-paths": "^6.1.1",
     "vitest": "^4.1.0"

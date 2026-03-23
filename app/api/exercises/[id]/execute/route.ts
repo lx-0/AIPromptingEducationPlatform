@@ -5,6 +5,7 @@ import { scoreSubmission } from "@/lib/scorer";
 import { updateStreak, checkAndAwardBadges } from "@/lib/badges";
 import { sendScoreNotification } from "@/lib/email";
 import { getProvider } from "@/lib/llm-providers";
+import { getScoringQueue } from "@/lib/queue";
 import type { ModelConfig } from "@/lib/llm-providers";
 
 // Rate limit: max 10 executions per user per 60 seconds
@@ -193,18 +194,29 @@ async function handleStandard(
 
         logTokens(submissionId, config, result).catch(() => {});
 
-        controller.enqueue(sse({ scoring: true }));
-
-        const { score, newBadges, currentStreak } = await runScoringAndGamification(
-          submissionId,
-          userId,
-          exercise.title,
-          exerciseId
-        );
-
-        controller.enqueue(
-          sse({ done: true, submissionId, score, newBadges: newBadges.length > 0 ? newBadges : undefined, currentStreak: currentStreak > 0 ? currentStreak : undefined })
-        );
+        const scoringQueue = getScoringQueue();
+        if (scoringQueue) {
+          // Async scoring via BullMQ — respond immediately, score arrives via polling
+          await scoringQueue.add("score-submission", {
+            submissionId,
+            userId,
+            exerciseTitle: exercise.title,
+            exerciseId,
+          });
+          controller.enqueue(sse({ done: true, submissionId }));
+        } else {
+          // Fallback: inline scoring when Redis is not configured
+          controller.enqueue(sse({ scoring: true }));
+          const { score, newBadges, currentStreak } = await runScoringAndGamification(
+            submissionId,
+            userId,
+            exercise.title,
+            exerciseId
+          );
+          controller.enqueue(
+            sse({ done: true, submissionId, score, newBadges: newBadges.length > 0 ? newBadges : undefined, currentStreak: currentStreak > 0 ? currentStreak : undefined })
+          );
+        }
       } catch (err) {
         const message = err instanceof Error ? err.message : "LLM provider error";
         await pool.query("UPDATE submissions SET llm_response = $1 WHERE id = $2", [`[Error] ${message}`, submissionId]);
@@ -461,16 +473,27 @@ async function handleMultiStep(
         };
 
         if (isLastStep) {
-          controller.enqueue(sse({ scoring: true }));
-          const { score, newBadges, currentStreak } = await runScoringAndGamification(
-            submissionId,
-            userId,
-            exercise.title,
-            exerciseId
-          );
-          finalPayload.score = score;
-          finalPayload.newBadges = newBadges.length > 0 ? newBadges : undefined;
-          finalPayload.currentStreak = currentStreak > 0 ? currentStreak : undefined;
+          const scoringQueue = getScoringQueue();
+          if (scoringQueue) {
+            await scoringQueue.add("score-submission", {
+              submissionId,
+              userId,
+              exerciseTitle: exercise.title,
+              exerciseId,
+            });
+            // score will be fetched via polling
+          } else {
+            controller.enqueue(sse({ scoring: true }));
+            const { score, newBadges, currentStreak } = await runScoringAndGamification(
+              submissionId,
+              userId,
+              exercise.title,
+              exerciseId
+            );
+            finalPayload.score = score;
+            finalPayload.newBadges = newBadges.length > 0 ? newBadges : undefined;
+            finalPayload.currentStreak = currentStreak > 0 ? currentStreak : undefined;
+          }
         }
 
         controller.enqueue(sse(finalPayload));

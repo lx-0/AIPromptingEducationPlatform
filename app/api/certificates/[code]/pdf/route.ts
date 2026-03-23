@@ -18,7 +18,7 @@ export async function GET(_req: Request, { params }: Params) {
 
   const filename = `certificate-${certificate.verification_code}.pdf`;
 
-  return new NextResponse(pdfBytes, {
+  return new NextResponse(pdfBytes as unknown as BodyInit, {
     headers: {
       "Content-Type": "application/pdf",
       "Content-Disposition": `attachment; filename="${filename}"`,
