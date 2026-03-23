@@ -6,6 +6,7 @@ export interface SessionData {
   email: string;
   role: string;
   displayName: string;
+  isAdmin?: boolean;
   // Temporary: set during OAuth flow before role selection completes
   pendingOAuth?: {
     googleId: string;

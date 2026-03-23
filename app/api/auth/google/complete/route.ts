@@ -37,7 +37,7 @@ export async function POST(request: Request) {
       const result = await client.query(
         `INSERT INTO users (email, display_name, role, oauth_provider, oauth_provider_id)
          VALUES ($1, $2, $3, 'google', $4)
-         RETURNING id, email, display_name, role`,
+         RETURNING id, email, display_name, role, is_admin`,
         [email, displayName, role, googleId]
       );
       user = result.rows[0];
@@ -58,6 +58,7 @@ export async function POST(request: Request) {
     session.email = user.email;
     session.role = user.role;
     session.displayName = user.display_name;
+    session.isAdmin = user.is_admin ?? false;
     await session.save();
 
     return NextResponse.json({ ok: true, next });

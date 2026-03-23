@@ -92,18 +92,22 @@ export async function GET(request: Request) {
   try {
     // Check if a user with this Google ID already exists
     const byOAuth = await client.query(
-      "SELECT id, email, display_name, role FROM users WHERE oauth_provider = 'google' AND oauth_provider_id = $1",
+      "SELECT id, email, display_name, role, is_admin, is_disabled FROM users WHERE oauth_provider = 'google' AND oauth_provider_id = $1",
       [googleUser.sub]
     );
 
     if (byOAuth.rows.length > 0) {
       // Returning OAuth user — log them in directly
       const user = byOAuth.rows[0];
+      if (user.is_disabled) {
+        return NextResponse.redirect(new URL("/auth/sign-in?error=account_disabled", request.url));
+      }
       const session = await getSession();
       session.userId = user.id;
       session.email = user.email;
       session.role = user.role;
       session.displayName = user.display_name;
+      session.isAdmin = user.is_admin ?? false;
       await session.save();
 
       const response = NextResponse.redirect(new URL(next, request.url));
@@ -113,13 +117,16 @@ export async function GET(request: Request) {
 
     // Check if an email/password account with this email already exists
     const byEmail = await client.query(
-      "SELECT id, email, display_name, role FROM users WHERE email = $1",
+      "SELECT id, email, display_name, role, is_admin, is_disabled FROM users WHERE email = $1",
       [googleUser.email.toLowerCase()]
     );
 
     if (byEmail.rows.length > 0) {
       // Link Google to existing account
       const user = byEmail.rows[0];
+      if (user.is_disabled) {
+        return NextResponse.redirect(new URL("/auth/sign-in?error=account_disabled", request.url));
+      }
       await client.query(
         "UPDATE users SET oauth_provider = 'google', oauth_provider_id = $1 WHERE id = $2",
         [googleUser.sub, user.id]
@@ -130,6 +137,7 @@ export async function GET(request: Request) {
       session.email = user.email;
       session.role = user.role;
       session.displayName = user.display_name;
+      session.isAdmin = user.is_admin ?? false;
       await session.save();
 
       const response = NextResponse.redirect(new URL(next, request.url));

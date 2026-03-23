@@ -15,7 +15,7 @@ export async function POST(request: Request) {
   }
 
   const result = await pool.query(
-    "SELECT id, email, password_hash, display_name, role FROM users WHERE email = $1",
+    "SELECT id, email, password_hash, display_name, role, is_admin FROM users WHERE email = $1",
     [email.toLowerCase()]
   );
   const user = result.rows[0];
@@ -24,11 +24,16 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Invalid email or password" }, { status: 401 });
   }
 
+  if (user.is_disabled) {
+    return NextResponse.json({ error: "Account disabled" }, { status: 403 });
+  }
+
   const session = await getSession();
   session.userId = user.id;
   session.email = user.email;
   session.role = user.role;
   session.displayName = user.display_name;
+  session.isAdmin = user.is_admin ?? false;
   await session.save();
 
   return NextResponse.json({ ok: true });
