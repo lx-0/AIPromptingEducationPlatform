@@ -1,9 +1,5 @@
-import Anthropic from "@anthropic-ai/sdk";
 import pool from "@/lib/db";
-
-const anthropic = new Anthropic({
-  apiKey: process.env.ANTHROPIC_API_KEY,
-});
+import { getProvider } from "@/lib/llm-providers";
 
 type RubricCriterion = {
   criterion: string;
@@ -101,15 +97,15 @@ Score the trainee prompt against each rubric criterion. Return a JSON object wit
 
 Score each criterion from 0 to its max points. Be fair but rigorous.`;
 
-  const message = await anthropic.messages.create({
-    model: "claude-haiku-4-5-20251001",
-    max_tokens: 1024,
-    system: systemPrompt,
+  // Always use Anthropic Claude for the AI judge (reliable JSON output)
+  const provider = getProvider("anthropic");
+  const completionResult = await provider.complete({
+    systemPrompt,
     messages: [{ role: "user", content: userPrompt }],
+    config: { provider: "anthropic", model: "claude-haiku-4-5-20251001", max_tokens: 1024 },
   });
 
-  const rawText =
-    message.content[0].type === "text" ? message.content[0].text : "";
+  const rawText = completionResult.text;
 
   let judgeOutput: JudgeOutput;
   try {

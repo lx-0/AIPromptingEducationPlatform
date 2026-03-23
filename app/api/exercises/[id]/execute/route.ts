@@ -1,25 +1,15 @@
 import { NextResponse } from "next/server";
-import Anthropic from "@anthropic-ai/sdk";
 import pool from "@/lib/db";
 import { getSession } from "@/lib/session";
 import { scoreSubmission } from "@/lib/scorer";
 import { updateStreak, checkAndAwardBadges } from "@/lib/badges";
 import { sendScoreNotification } from "@/lib/email";
-
-const anthropic = new Anthropic({
-  apiKey: process.env.ANTHROPIC_API_KEY,
-});
+import { getProvider } from "@/lib/llm-providers";
+import type { ModelConfig } from "@/lib/llm-providers";
 
 // Rate limit: max 10 executions per user per 60 seconds
 const RATE_LIMIT_MAX = 10;
 const RATE_LIMIT_WINDOW_SECONDS = 60;
-
-type ModelConfig = {
-  provider?: string;
-  model?: string;
-  temperature?: number;
-  max_tokens?: number;
-};
 
 type Exercise = {
   id: string;
@@ -85,26 +75,7 @@ export async function POST(
 
   // Resolve model config
   const config = exercise.model_config ?? {};
-  const provider = config.provider ?? "anthropic";
-  const model = config.model ?? "claude-sonnet-4-6";
-  const temperature = config.temperature ?? 0.7;
-  const maxTokens = config.max_tokens ?? 1024;
-
-  if (provider !== "anthropic") {
-    await pool.query(
-      "UPDATE submissions SET llm_response = $1 WHERE id = $2",
-      [`Provider "${provider}" is not yet supported.`, submissionId]
-    );
-    return NextResponse.json(
-      { error: `Provider "${provider}" is not yet supported.` },
-      { status: 400 }
-    );
-  }
-
-  // Build messages for Anthropic
-  const messages: Anthropic.MessageParam[] = [
-    { role: "user", content: prompt_text.trim() },
-  ];
+  const provider = getProvider(config.provider);
 
   // Streaming response
   const encoder = new TextEncoder();
@@ -114,34 +85,37 @@ export async function POST(
       let fullResponse = "";
 
       try {
-        const anthropicStream = anthropic.messages.stream({
-          model,
-          max_tokens: maxTokens,
-          temperature,
-          ...(exercise.system_prompt
-            ? { system: exercise.system_prompt }
-            : {}),
-          messages,
-        });
-
-        for await (const event of anthropicStream) {
-          if (
-            event.type === "content_block_delta" &&
-            event.delta.type === "text_delta"
-          ) {
-            const text = event.delta.text;
+        const result = await provider.stream({
+          systemPrompt: exercise.system_prompt,
+          messages: [{ role: "user", content: prompt_text.trim() }],
+          config,
+          onChunk(text) {
             fullResponse += text;
             controller.enqueue(
               encoder.encode(`data: ${JSON.stringify({ text })}\n\n`)
             );
-          }
-        }
+          },
+        });
 
         // Store llm_response in DB
         await pool.query(
           "UPDATE submissions SET llm_response = $1 WHERE id = $2",
           [fullResponse, submissionId]
         );
+
+        // Log cost/token usage
+        await pool.query(
+          `INSERT INTO llm_call_logs
+             (submission_id, provider, model, input_tokens, output_tokens)
+           VALUES ($1, $2, $3, $4, $5)`,
+          [
+            submissionId,
+            config.provider ?? "anthropic",
+            config.model ?? "claude-sonnet-4-6",
+            result.inputTokens,
+            result.outputTokens,
+          ]
+        ).catch(() => {}); // non-fatal
 
         // Notify client that scoring is starting
         controller.enqueue(

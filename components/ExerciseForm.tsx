@@ -3,6 +3,15 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import RubricBuilder, { RubricCriterion } from "./RubricBuilder";
+import { PROVIDER_MODELS, DEFAULT_MODEL } from "@/lib/llm-providers/types";
+import type { ProviderName } from "@/lib/llm-providers/types";
+
+type ModelConfig = {
+  provider?: ProviderName;
+  model?: string;
+  temperature?: number;
+  max_tokens?: number;
+};
 
 type ExerciseFormProps = {
   workshopId: string;
@@ -13,8 +22,15 @@ type ExerciseFormProps = {
     system_prompt: string;
     rubric: RubricCriterion[];
     sort_order: number;
+    model_config?: ModelConfig;
   };
 };
+
+const PROVIDERS: { id: ProviderName; label: string }[] = [
+  { id: "anthropic", label: "Anthropic (Claude)" },
+  { id: "openai", label: "OpenAI (GPT)" },
+  { id: "google", label: "Google (Gemini)" },
+];
 
 export default function ExerciseForm({
   workshopId,
@@ -35,8 +51,27 @@ export default function ExerciseForm({
     initialValues?.rubric ?? []
   );
   const [sortOrder, setSortOrder] = useState(initialValues?.sort_order ?? 0);
+
+  const initProvider: ProviderName =
+    (initialValues?.model_config?.provider as ProviderName) ?? "anthropic";
+  const [provider, setProvider] = useState<ProviderName>(initProvider);
+  const [model, setModel] = useState<string>(
+    initialValues?.model_config?.model ?? DEFAULT_MODEL[initProvider]
+  );
+  const [temperature, setTemperature] = useState<number>(
+    initialValues?.model_config?.temperature ?? 0.7
+  );
+  const [maxTokens, setMaxTokens] = useState<number>(
+    initialValues?.model_config?.max_tokens ?? 1024
+  );
+
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+
+  function handleProviderChange(newProvider: ProviderName) {
+    setProvider(newProvider);
+    setModel(DEFAULT_MODEL[newProvider]);
+  }
 
   function validate(): string | null {
     if (!title.trim()) return "Title is required.";
@@ -67,6 +102,12 @@ export default function ExerciseForm({
         system_prompt: systemPrompt.trim() || null,
         rubric,
         sort_order: sortOrder,
+        model_config: {
+          provider,
+          model,
+          temperature,
+          max_tokens: maxTokens,
+        },
       };
 
       const res = isEdit
@@ -142,6 +183,86 @@ export default function ExerciseForm({
           placeholder="System prompt for the AI model (if any)..."
           className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 px-3 py-2 text-sm focus:border-blue-400 focus:outline-none"
         />
+      </div>
+
+      {/* Model configuration */}
+      <div className="rounded-lg border border-gray-200 dark:border-gray-700 p-4 space-y-4">
+        <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">
+          Model configuration
+        </h3>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label className="mb-1.5 block text-xs font-medium text-gray-600 dark:text-gray-400">
+              Provider
+            </label>
+            <select
+              value={provider}
+              onChange={(e) => handleProviderChange(e.target.value as ProviderName)}
+              className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 px-3 py-2 text-sm focus:border-blue-400 focus:outline-none"
+            >
+              {PROVIDERS.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.label}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label className="mb-1.5 block text-xs font-medium text-gray-600 dark:text-gray-400">
+              Model
+            </label>
+            <select
+              value={model}
+              onChange={(e) => setModel(e.target.value)}
+              className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 px-3 py-2 text-sm focus:border-blue-400 focus:outline-none"
+            >
+              {PROVIDER_MODELS[provider].map((m) => (
+                <option key={m.id} value={m.id}>
+                  {m.label}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label className="mb-1.5 block text-xs font-medium text-gray-600 dark:text-gray-400">
+              Temperature{" "}
+              <span className="text-gray-400 dark:text-gray-500 font-normal">
+                ({temperature})
+              </span>
+            </label>
+            <input
+              type="range"
+              min="0"
+              max="1"
+              step="0.05"
+              value={temperature}
+              onChange={(e) => setTemperature(parseFloat(e.target.value))}
+              className="w-full accent-blue-600"
+            />
+            <div className="flex justify-between text-xs text-gray-400 mt-0.5">
+              <span>Precise</span>
+              <span>Creative</span>
+            </div>
+          </div>
+
+          <div>
+            <label className="mb-1.5 block text-xs font-medium text-gray-600 dark:text-gray-400">
+              Max tokens
+            </label>
+            <input
+              type="number"
+              min="64"
+              max="8192"
+              step="64"
+              value={maxTokens}
+              onChange={(e) => setMaxTokens(parseInt(e.target.value) || 1024)}
+              className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 px-3 py-2 text-sm focus:border-blue-400 focus:outline-none"
+            />
+          </div>
+        </div>
       </div>
 
       <div>
