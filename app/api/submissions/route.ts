@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import pool from "@/lib/db";
 import { getSession } from "@/lib/session";
+import { maybeAutoEnrollNextWorkshop } from "@/lib/learning-paths";
 
 export async function POST(request: Request) {
   const session = await getSession();
@@ -35,5 +36,10 @@ export async function POST(request: Request) {
     [exercise_id, session.userId, prompt_text]
   );
 
-  return NextResponse.json(result.rows[0], { status: 201 });
+  const submission = result.rows[0];
+
+  // Fire-and-forget: auto-enroll trainee in next workshop if prerequisite is now complete
+  maybeAutoEnrollNextWorkshop(session.userId, exercise_id).catch(() => {});
+
+  return NextResponse.json(submission, { status: 201 });
 }

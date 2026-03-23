@@ -239,12 +239,20 @@ export default async function DashboardPage() {
             <div>
               <div className="mb-4 flex items-center justify-between">
                 <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">My workshops</h2>
-                <Link
-                  href="/workshops/new"
-                  className="rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-blue-700 transition-colors"
-                >
-                  + Create workshop
-                </Link>
+                <div className="flex items-center gap-2">
+                  <Link
+                    href="/paths"
+                    className="rounded-lg border border-gray-200 dark:border-gray-700 px-4 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                  >
+                    Learning paths
+                  </Link>
+                  <Link
+                    href="/workshops/new"
+                    className="rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-blue-700 transition-colors"
+                  >
+                    + Create workshop
+                  </Link>
+                </div>
               </div>
 
               {instructorWorkshops.length === 0 ? (
@@ -284,13 +292,22 @@ export default async function DashboardPage() {
           )}
 
           {session.role === "trainee" && (
-            <Link
-              href="/workshops"
-              className="block rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-6 hover:border-blue-300 dark:hover:border-blue-600 hover:shadow-sm transition-all text-center focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-gray-950"
-            >
-              <p className="text-sm font-semibold text-blue-600 dark:text-blue-400">Browse workshops →</p>
-              <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">View available workshops and start practising prompts.</p>
-            </Link>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <Link
+                href="/workshops"
+                className="block rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-6 hover:border-blue-300 dark:hover:border-blue-600 hover:shadow-sm transition-all text-center focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-gray-950"
+              >
+                <p className="text-sm font-semibold text-blue-600 dark:text-blue-400">Browse workshops →</p>
+                <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">View available workshops and start practising prompts.</p>
+              </Link>
+              <Link
+                href="/paths"
+                className="block rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-6 hover:border-purple-300 dark:hover:border-purple-600 hover:shadow-sm transition-all text-center focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 dark:focus:ring-offset-gray-950"
+              >
+                <p className="text-sm font-semibold text-purple-600 dark:text-purple-400">Learning paths →</p>
+                <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">Follow a guided curriculum across multiple workshops.</p>
+              </Link>
+            </div>
           )}
 
           {session.role === "trainee" && (
