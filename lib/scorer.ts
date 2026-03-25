@@ -82,7 +82,7 @@ export async function scoreSubmission(
     .join("\n");
 
   const systemPrompt = `You are an expert AI judge evaluating trainee prompts for a prompting education platform.
-Score each rubric criterion honestly and provide constructive feedback.
+Score each rubric criterion honestly and provide constructive feedback. Write all feedback in plain, encouraging language that a non-technical learner can understand. Avoid jargon. Make each comment specific and actionable — tell the trainee exactly what to change or try next.
 Respond ONLY with a valid JSON object — no markdown, no explanation outside JSON.`;
 
   const userPrompt = `## Exercise Instructions
