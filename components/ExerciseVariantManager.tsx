@@ -52,6 +52,7 @@ export default function ExerciseVariantManager({ workshopId, exercises }: Props)
   }, [workshopId]);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchGroups();
   }, [fetchGroups]);
 

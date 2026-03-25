@@ -4,7 +4,6 @@ import pool from "@/lib/db";
 import dynamic from "next/dynamic";
 
 const AdminAnalyticsCharts = dynamic(() => import("./AdminAnalyticsCharts"), {
-  ssr: false,
   loading: () => (
     <div className="rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-10 text-center text-sm text-gray-400">
       Loading charts…

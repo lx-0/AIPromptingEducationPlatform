@@ -1,13 +1,13 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { useToast } from "@/components/ToastProvider";
 
 type Role = "instructor" | "trainee";
 
-export default function SignUpPage() {
+function SignUpForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { addToast } = useToast();
@@ -22,6 +22,7 @@ export default function SignUpPage() {
 
   useEffect(() => {
     const ref = searchParams.get("ref");
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (ref) setReferralCode(ref.toUpperCase());
   }, [searchParams]);
 
@@ -217,5 +218,13 @@ export default function SignUpPage() {
         </form>
       </div>
     </main>
+  );
+}
+
+export default function SignUpPage() {
+  return (
+    <Suspense>
+      <SignUpForm />
+    </Suspense>
   );
 }

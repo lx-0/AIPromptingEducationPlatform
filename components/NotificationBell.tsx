@@ -74,6 +74,7 @@ export default function NotificationBell() {
   }
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     load();
     // Poll every 60 seconds
     const interval = setInterval(load, 60_000);

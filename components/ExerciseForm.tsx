@@ -318,7 +318,7 @@ export default function ExerciseForm({
           <h3 className="text-sm font-semibold text-purple-800 dark:text-purple-300">
             Steps
             <span className="ml-2 text-xs font-normal text-purple-600 dark:text-purple-400">
-              Each step's output feeds into the next step's context
+              Each step&apos;s output feeds into the next step&apos;s context
             </span>
           </h3>
           {steps.map((step, i) => (

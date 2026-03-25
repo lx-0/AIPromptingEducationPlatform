@@ -72,6 +72,7 @@ export default function EditLearningPathPage() {
   }, [id]);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     loadPath();
   }, [loadPath]);
 

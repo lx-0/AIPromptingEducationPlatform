@@ -1,9 +1,11 @@
 import Anthropic from "@anthropic-ai/sdk";
 import type { LLMProvider, StreamParams, CompletionParams, CompletionResult } from "./types";
 
-const anthropic = new Anthropic({
-  apiKey: process.env.ANTHROPIC_API_KEY,
-});
+let _anthropic: Anthropic | null = null;
+function getAnthropic(): Anthropic {
+  if (!_anthropic) _anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+  return _anthropic;
+}
 
 export const anthropicProvider: LLMProvider = {
   async stream({ systemPrompt, messages, config, onChunk }): Promise<CompletionResult> {
@@ -13,7 +15,7 @@ export const anthropicProvider: LLMProvider = {
 
     let fullText = "";
 
-    const stream = anthropic.messages.stream({
+    const stream = getAnthropic().messages.stream({
       model,
       max_tokens: maxTokens,
       temperature,
@@ -43,7 +45,7 @@ export const anthropicProvider: LLMProvider = {
     const model = config.model ?? "claude-haiku-4-5-20251001";
     const maxTokens = config.max_tokens ?? 1024;
 
-    const message = await anthropic.messages.create({
+    const message = await getAnthropic().messages.create({
       model,
       max_tokens: maxTokens,
       ...(systemPrompt ? { system: systemPrompt } : {}),

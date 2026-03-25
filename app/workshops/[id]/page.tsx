@@ -65,7 +65,7 @@ const PublishPanel = dynamic(() => import("./PublishPanel"), {
   ),
 });
 
-const ReviewSection = dynamic(() => import("./ReviewSection"), { ssr: false });
+const ReviewSection = dynamic(() => import("./ReviewSection"));
 
 type Exercise = {
   id: string;

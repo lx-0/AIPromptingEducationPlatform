@@ -134,14 +134,14 @@ export default function InstructorGuidePage() {
           5. Setting up rubrics
         </h2>
         <p className="text-gray-700 dark:text-gray-300 mb-3 text-sm">
-          Rubrics tell the AI scorer exactly what to look for in a trainee's prompt response.
+          Rubrics tell the AI scorer exactly what to look for in a trainee&apos;s prompt response.
         </p>
         <ol className="list-decimal list-inside space-y-2 text-gray-700 dark:text-gray-300 text-sm">
           <li>
             Inside the exercise editor, scroll to the <strong>Rubric</strong> section and click <strong>Add criterion</strong>.
           </li>
           <li>
-            Enter a <strong>criterion label</strong> (e.g. "Clarity"), a brief <strong>description</strong> of what good looks like, and the <strong>weight</strong> (points) for this criterion.
+            Enter a <strong>criterion label</strong> (e.g. &quot;Clarity&quot;), a brief <strong>description</strong> of what good looks like, and the <strong>weight</strong> (points) for this criterion.
           </li>
           <li>
             Add as many criteria as needed. The weights are summed to produce the total score.

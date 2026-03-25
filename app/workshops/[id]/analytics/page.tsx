@@ -15,7 +15,6 @@ import type {
 import type { CohortStat } from "./CohortComparison";
 
 const CohortComparisonWidget = dynamic(() => import("./CohortComparison"), {
-  ssr: false,
   loading: () => (
     <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-8 text-center text-sm text-gray-400">
       Loading cohort data…

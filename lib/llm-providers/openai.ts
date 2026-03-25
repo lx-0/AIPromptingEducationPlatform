@@ -1,9 +1,11 @@
 import OpenAI from "openai";
 import type { LLMProvider, StreamParams, CompletionParams, CompletionResult } from "./types";
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
+let _openai: OpenAI | null = null;
+function getOpenAI(): OpenAI {
+  if (!_openai) _openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+  return _openai;
+}
 
 function buildMessages(
   systemPrompt: string | null | undefined,
@@ -29,7 +31,7 @@ export const openaiProvider: LLMProvider = {
     let inputTokens = 0;
     let outputTokens = 0;
 
-    const stream = await openai.chat.completions.create({
+    const stream = await getOpenAI().chat.completions.create({
       model,
       temperature,
       max_tokens: maxTokens,
@@ -58,7 +60,7 @@ export const openaiProvider: LLMProvider = {
     const temperature = config.temperature ?? 0.7;
     const maxTokens = config.max_tokens ?? 1024;
 
-    const response = await openai.chat.completions.create({
+    const response = await getOpenAI().chat.completions.create({
       model,
       temperature,
       max_tokens: maxTokens,
