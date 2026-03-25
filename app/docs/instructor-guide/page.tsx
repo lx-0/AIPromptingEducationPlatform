@@ -44,10 +44,7 @@ export default function InstructorGuidePage() {
             and choose the <em>Instructor</em> role.
           </li>
           <li>
-            <strong>Verify your email</strong> — check your inbox and click the confirmation link.
-          </li>
-          <li>
-            <strong>Sign in</strong> — go to your{" "}
+            <strong>Go to your dashboard</strong> — you are signed in automatically after signup. Visit your{" "}
             <Link href="/dashboard" className="text-blue-600 hover:underline dark:text-blue-400">Dashboard</Link>{" "}
             to see your workspace.
           </li>
