@@ -12,6 +12,14 @@ vi.mock("@anthropic-ai/sdk", () => ({
   default: vi.fn(function () { return { messages: { create: mockCreate } }; }),
 }));
 
+vi.mock("openai", () => ({
+  default: vi.fn(function () { return { chat: { completions: { create: vi.fn() } } }; }),
+}));
+
+vi.mock("@google/generative-ai", () => ({
+  GoogleGenerativeAI: vi.fn(function () { return { getGenerativeModel: vi.fn() }; }),
+}));
+
 describe("lib/scorer – scoreSubmission", () => {
   beforeEach(() => {
     vi.clearAllMocks();

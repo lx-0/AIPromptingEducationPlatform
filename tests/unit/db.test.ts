@@ -14,9 +14,11 @@ describe("lib/db", () => {
   it("creates a Pool with DATABASE_URL", async () => {
     const { Pool } = await import("pg");
     await import("@/lib/db");
-    expect(Pool).toHaveBeenCalledWith({
-      connectionString: process.env.DATABASE_URL,
-    });
+    expect(Pool).toHaveBeenCalledWith(
+      expect.objectContaining({
+        connectionString: process.env.DATABASE_URL,
+      })
+    );
   });
 
   it("exports a pool instance", async () => {

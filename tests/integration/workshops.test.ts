@@ -7,6 +7,14 @@ vi.mock("@/lib/db", () => ({
   default: { query: mockQuery },
 }));
 
+// ── Billing mock ──────────────────────────────────────────────────────────────
+const mockIsPaidSubscriber = vi.fn().mockResolvedValue(true);
+
+vi.mock("@/lib/billing", () => ({
+  isPaidSubscriber: (...args: unknown[]) => mockIsPaidSubscriber(...args),
+  FREE_TIER_LIMITS: { maxWorkshops: 3, maxExercisesPerWorkshop: 5 },
+}));
+
 // ── Session mock ──────────────────────────────────────────────────────────────
 const mockSession = {
   userId: "",
@@ -61,6 +69,7 @@ describe("GET /api/workshops", () => {
 describe("POST /api/workshops", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockIsPaidSubscriber.mockResolvedValue(true);
     Object.assign(mockSession, { userId: "", role: "" });
   });
 
