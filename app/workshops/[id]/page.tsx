@@ -65,6 +65,12 @@ const PublishPanel = dynamic(() => import("./PublishPanel"), {
   ),
 });
 
+const DefaultProviderPanel = dynamic(() => import("./DefaultProviderPanel"), {
+  loading: () => (
+    <div className="mt-4 h-32 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 animate-pulse" />
+  ),
+});
+
 const ReviewSection = dynamic(() => import("./ReviewSection"));
 
 type Exercise = {
@@ -80,6 +86,7 @@ type Workshop = {
   status: string;
   instructor_id: string;
   invite_code: string | null;
+  default_provider: string;
 };
 
 type WorkshopStats = {
@@ -125,7 +132,7 @@ export default async function WorkshopDetailPage({
   }
 
   const workshopResult = await pool.query<Workshop>(
-    "SELECT id, title, description, status, instructor_id, invite_code FROM workshops WHERE id = $1",
+    "SELECT id, title, description, status, instructor_id, invite_code, default_provider FROM workshops WHERE id = $1",
     [id]
   );
   const workshop = workshopResult.rows[0];
@@ -324,6 +331,15 @@ export default async function WorkshopDetailPage({
               workshopId={id}
               status={workshop.status}
               inviteCode={workshop.invite_code}
+            />
+          </div>
+        )}
+
+        {isOwner && (
+          <div className="mt-4">
+            <DefaultProviderPanel
+              workshopId={id}
+              defaultProvider={workshop.default_provider as "anthropic" | "openai" | "google" ?? "anthropic"}
             />
           </div>
         )}

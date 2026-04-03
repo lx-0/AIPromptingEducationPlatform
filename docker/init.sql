@@ -34,8 +34,10 @@ CREATE TABLE workshops (
   instructor_id UUID        NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   status        TEXT        NOT NULL DEFAULT 'draft'
                             CHECK (status IN ('draft', 'published', 'archived')),
-  invite_code   TEXT        UNIQUE,
-  created_at    TIMESTAMPTZ NOT NULL DEFAULT NOW()
+  invite_code       TEXT        UNIQUE,
+  default_provider  TEXT        NOT NULL DEFAULT 'anthropic'
+                                CHECK (default_provider IN ('anthropic', 'openai', 'google')),
+  created_at        TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 CREATE INDEX idx_workshops_instructor_id ON workshops (instructor_id);

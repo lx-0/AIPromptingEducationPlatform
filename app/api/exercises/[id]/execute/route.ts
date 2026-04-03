@@ -33,6 +33,7 @@ type Exercise = {
   model_config: ModelConfig;
   exercise_type: ExerciseType;
   constraints: ExerciseConstraints;
+  workshop_default_provider?: string;
 };
 
 const encoder = new TextEncoder();
@@ -73,11 +74,14 @@ export async function POST(
     prompt_text_b,
   } = body;
 
-  // Load exercise
+  // Load exercise with its workshop's default_provider
   const exerciseResult = await pool.query<Exercise>(
-    `SELECT id, title, system_prompt, model_config, exercise_type,
-            COALESCE(constraints, '{}') AS constraints
-     FROM exercises WHERE id = $1`,
+    `SELECT e.id, e.title, e.system_prompt, e.model_config, e.exercise_type,
+            COALESCE(e.constraints, '{}') AS constraints,
+            w.default_provider AS workshop_default_provider
+     FROM exercises e
+     JOIN workshops w ON w.id = e.workshop_id
+     WHERE e.id = $1`,
     [id]
   );
   const exercise = exerciseResult.rows[0];
@@ -102,6 +106,10 @@ export async function POST(
   }
 
   const config = exercise.model_config ?? {};
+  // Fall back to workshop-level default provider when exercise has none set
+  if (!config.provider && exercise.workshop_default_provider) {
+    config.provider = exercise.workshop_default_provider as ModelConfig["provider"];
+  }
   const provider = getProvider(config.provider);
 
   // ─── Route by exercise type ───────────────────────────────────────────────

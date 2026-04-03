@@ -37,7 +37,7 @@ export async function PATCH(
   }
 
   const body = await request.json();
-  const { title, description, category_id, is_featured } = body;
+  const { title, description, category_id, is_featured, default_provider } = body;
 
   const setClauses: string[] = [];
   const values: unknown[] = [];
@@ -58,6 +58,14 @@ export async function PATCH(
   if (is_featured !== undefined) {
     setClauses.push(`is_featured = $${paramIdx++}`);
     values.push(Boolean(is_featured));
+  }
+  if (default_provider !== undefined) {
+    const validProviders = ["anthropic", "openai", "google"];
+    if (!validProviders.includes(default_provider)) {
+      return NextResponse.json({ error: "Invalid provider" }, { status: 400 });
+    }
+    setClauses.push(`default_provider = $${paramIdx++}`);
+    values.push(default_provider);
   }
 
   if (setClauses.length === 0) {
