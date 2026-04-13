@@ -10,7 +10,6 @@ services:
       POSTGRES_PASSWORD: postgres
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ./docker/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
     ports:
       - "5432:5432"
     healthcheck:
@@ -18,6 +17,19 @@ services:
       interval: 5s
       timeout: 5s
       retries: 10
+
+  migrate:
+    image: node:20-alpine
+    working_dir: /app
+    volumes:
+      - .:/app
+    command: sh -c "npm ci --prefer-offline 2>/dev/null || npm ci && npm run migrate:up"
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgres://postgres:postgres@db:5432/prompting_school
+    restart: "no"
 
   redis:
     image: redis:7-alpine

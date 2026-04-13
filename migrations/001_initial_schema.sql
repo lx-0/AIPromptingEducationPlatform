@@ -1,0 +1,198 @@
+-- Migration 001: Initial schema for AI Prompting Education Platform
+-- Captures the baseline schema for the plain-PostgreSQL deployment.
+-- This is the source of truth for local dev (docker-compose) and Railway.
+
+CREATE EXTENSION IF NOT EXISTS "pgcrypto";
+
+-- ============================================================
+-- users
+-- Stores credentials and profile in one table.
+-- ============================================================
+CREATE TABLE users (
+  id                 UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+  email              TEXT        NOT NULL UNIQUE,
+  password_hash      TEXT,
+  display_name       TEXT        NOT NULL,
+  role               TEXT        NOT NULL CHECK (role IN ('instructor', 'trainee')),
+  oauth_provider     TEXT,
+  oauth_provider_id  TEXT,
+  stripe_customer_id TEXT        UNIQUE,
+  created_at         TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  CONSTRAINT users_oauth_provider_id_unique UNIQUE (oauth_provider, oauth_provider_id)
+);
+
+CREATE INDEX idx_users_oauth
+  ON users (oauth_provider, oauth_provider_id)
+  WHERE oauth_provider IS NOT NULL;
+
+-- ============================================================
+-- workshops
+-- ============================================================
+CREATE TABLE workshops (
+  id               UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+  title            TEXT        NOT NULL,
+  description      TEXT,
+  instructor_id    UUID        NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  status           TEXT        NOT NULL DEFAULT 'draft'
+                               CHECK (status IN ('draft', 'published', 'archived')),
+  invite_code      TEXT        UNIQUE,
+  default_provider TEXT        NOT NULL DEFAULT 'anthropic'
+                               CHECK (default_provider IN ('anthropic', 'openai', 'google')),
+  created_at       TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX idx_workshops_instructor_id     ON workshops (instructor_id);
+CREATE INDEX idx_workshops_status            ON workshops (status);
+CREATE INDEX idx_workshops_instructor_status ON workshops (instructor_id, status);
+
+-- ============================================================
+-- exercises
+-- ============================================================
+CREATE TABLE exercises (
+  id            UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+  workshop_id   UUID        NOT NULL REFERENCES workshops(id) ON DELETE CASCADE,
+  title         TEXT        NOT NULL,
+  instructions  TEXT        NOT NULL,
+  system_prompt TEXT,
+  model_config  JSONB       NOT NULL DEFAULT '{}',
+  rubric        JSONB       NOT NULL DEFAULT '[]',
+  sort_order    INTEGER     NOT NULL DEFAULT 0,
+  created_at    TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX idx_exercises_workshop_id ON exercises (workshop_id);
+CREATE INDEX idx_exercises_sort_order  ON exercises (workshop_id, sort_order);
+
+-- ============================================================
+-- submissions
+-- ============================================================
+CREATE TABLE submissions (
+  id           UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+  exercise_id  UUID        NOT NULL REFERENCES exercises(id) ON DELETE CASCADE,
+  trainee_id   UUID        NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  prompt_text  TEXT        NOT NULL,
+  llm_response TEXT,
+  submitted_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX idx_submissions_exercise_id       ON submissions (exercise_id);
+CREATE INDEX idx_submissions_trainee_id        ON submissions (trainee_id);
+CREATE INDEX idx_submissions_trainee_submitted ON submissions (trainee_id, submitted_at DESC);
+CREATE INDEX idx_submissions_submitted_at      ON submissions (submitted_at DESC);
+CREATE INDEX idx_submissions_exercise_trainee  ON submissions (exercise_id, trainee_id);
+
+-- ============================================================
+-- scores
+-- ============================================================
+CREATE TABLE scores (
+  id            UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+  submission_id UUID        NOT NULL REFERENCES submissions(id) ON DELETE CASCADE,
+  total_score   NUMERIC     NOT NULL CHECK (total_score >= 0),
+  max_score     NUMERIC     NOT NULL CHECK (max_score > 0),
+  feedback      JSONB       NOT NULL DEFAULT '{}',
+  scored_at     TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX idx_scores_submission_id ON scores (submission_id);
+CREATE INDEX idx_scores_scored_at     ON scores (scored_at DESC);
+
+-- ============================================================
+-- enrollments
+-- ============================================================
+CREATE TABLE enrollments (
+  id          UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+  workshop_id UUID        NOT NULL REFERENCES workshops(id) ON DELETE CASCADE,
+  trainee_id  UUID        NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  enrolled_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  UNIQUE (workshop_id, trainee_id)
+);
+
+CREATE INDEX idx_enrollments_workshop_id      ON enrollments (workshop_id);
+CREATE INDEX idx_enrollments_trainee_id       ON enrollments (trainee_id);
+CREATE INDEX idx_enrollments_workshop_trainee ON enrollments (workshop_id, trainee_id);
+
+-- ============================================================
+-- streaks
+-- ============================================================
+CREATE TABLE streaks (
+  trainee_id     UUID        PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+  current_streak INT         NOT NULL DEFAULT 0,
+  longest_streak INT         NOT NULL DEFAULT 0,
+  last_sub_date  DATE,
+  updated_at     TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- ============================================================
+-- user_badges
+-- ============================================================
+CREATE TABLE user_badges (
+  id         UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+  trainee_id UUID        NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  badge_type TEXT        NOT NULL,
+  earned_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  UNIQUE (trainee_id, badge_type)
+);
+
+CREATE INDEX idx_user_badges_trainee_id ON user_badges (trainee_id);
+
+-- ============================================================
+-- subscriptions
+-- ============================================================
+CREATE TABLE subscriptions (
+  id                     UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id                UUID        NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  stripe_subscription_id TEXT        NOT NULL UNIQUE,
+  stripe_customer_id     TEXT        NOT NULL,
+  plan                   TEXT        NOT NULL CHECK (plan IN ('free', 'pro', 'team')),
+  status                 TEXT        NOT NULL,
+  current_period_start   TIMESTAMPTZ,
+  current_period_end     TIMESTAMPTZ,
+  cancel_at_period_end   BOOLEAN     NOT NULL DEFAULT FALSE,
+  created_at             TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at             TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX idx_subscriptions_user_id             ON subscriptions (user_id);
+CREATE INDEX idx_subscriptions_stripe_customer_id  ON subscriptions (stripe_customer_id);
+CREATE UNIQUE INDEX idx_subscriptions_stripe_sub_id ON subscriptions (stripe_subscription_id);
+
+-- ============================================================
+-- email_preferences
+-- ============================================================
+CREATE TABLE email_preferences (
+  user_id         UUID        PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+  score_notify    BOOLEAN     NOT NULL DEFAULT TRUE,
+  workshop_invite BOOLEAN     NOT NULL DEFAULT TRUE,
+  updated_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- ============================================================
+-- llm_call_logs
+-- ============================================================
+CREATE TABLE llm_call_logs (
+  id            UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+  submission_id UUID        REFERENCES submissions(id) ON DELETE SET NULL,
+  provider      TEXT        NOT NULL,
+  model         TEXT        NOT NULL,
+  input_tokens  INTEGER     NOT NULL DEFAULT 0,
+  output_tokens INTEGER     NOT NULL DEFAULT 0,
+  called_at     TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX idx_llm_call_logs_submission_id ON llm_call_logs (submission_id);
+CREATE INDEX idx_llm_call_logs_provider      ON llm_call_logs (provider);
+CREATE INDEX idx_llm_call_logs_called_at     ON llm_call_logs (called_at);
+
+-- Down Migration
+DROP TABLE IF EXISTS llm_call_logs;
+DROP TABLE IF EXISTS email_preferences;
+DROP TABLE IF EXISTS subscriptions;
+DROP TABLE IF EXISTS user_badges;
+DROP TABLE IF EXISTS streaks;
+DROP TABLE IF EXISTS enrollments;
+DROP TABLE IF EXISTS scores;
+DROP TABLE IF EXISTS submissions;
+DROP TABLE IF EXISTS exercises;
+DROP TABLE IF EXISTS workshops;
+DROP TABLE IF EXISTS users;
+DROP EXTENSION IF EXISTS "pgcrypto";

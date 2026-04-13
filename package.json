@@ -10,10 +10,14 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "migrate:up": "node-pg-migrate up",
+    "migrate:down": "node-pg-migrate down",
+    "migrate:create": "node-pg-migrate create"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.78.0",
+    "node-pg-migrate": "^7.9.1",
     "@google/generative-ai": "^0.24.1",
     "bcryptjs": "^3.0.2",
     "bullmq": "^5.71.0",

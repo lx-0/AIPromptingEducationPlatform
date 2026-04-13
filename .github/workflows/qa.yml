@@ -84,10 +84,10 @@ jobs:
 
       - run: npm ci
 
-      - name: Apply database schema
-        run: psql -h localhost -U postgres -d prompting_school_test -f docker/init.sql
+      - name: Run database migrations
+        run: npm run migrate:up
         env:
-          PGPASSWORD: postgres
+          DATABASE_URL: postgres://postgres:postgres@localhost:5432/prompting_school_test
 
       - name: Run integration tests
         run: npx vitest run tests/integration
@@ -133,10 +133,10 @@ jobs:
       - name: Install Playwright browsers
         run: npx playwright install chromium --with-deps
 
-      - name: Apply database schema
-        run: psql -h localhost -U postgres -d prompting_school_e2e -f docker/init.sql
+      - name: Run database migrations
+        run: npm run migrate:up
         env:
-          PGPASSWORD: postgres
+          DATABASE_URL: postgres://postgres:postgres@localhost:5432/prompting_school_e2e
 
       - name: Build app
         run: npm run build

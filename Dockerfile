@@ -27,9 +27,21 @@ COPY --from=builder /app/public ./public
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 
+# node-pg-migrate needs to be available at runtime for the migration step.
+# Copy the full node_modules from the deps stage so the CLI and its
+# dependencies are present alongside the standalone Next.js bundle.
+COPY --from=deps --chown=nextjs:nodejs /app/node_modules ./node_modules
+
+# Migration files
+COPY --from=builder --chown=nextjs:nodejs /app/migrations ./migrations
+
+# Startup script: run migrations then start the app
+COPY --chown=nextjs:nodejs docker/entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
+
 USER nextjs
 EXPOSE 3000
 ENV PORT=3000
 ENV HOSTNAME="0.0.0.0"
 
-CMD ["node", "server.js"]
+CMD ["/entrypoint.sh"]

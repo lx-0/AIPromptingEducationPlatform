@@ -131,16 +131,75 @@ Redirect back to /dashboard
 | Per-exercise model config | Instructors can mix providers (Claude for execution, GPT for judging) within a single workshop |
 | Invite-code workshop join | Low-friction access; no email approval flow needed for early beta |
 
+## Database Migrations
+
+Schema changes are managed with **[node-pg-migrate](https://github.com/salsita/node-pg-migrate)**. All migrations live in `migrations/` and are versioned sequentially.
+
+### Workflow
+
+| Command | What it does |
+|---------|-------------|
+| `npm run migrate:up` | Apply all pending migrations |
+| `npm run migrate:down` | Roll back the last applied migration |
+| `npm run migrate:create <name>` | Scaffold a new timestamped migration file |
+
+Set `DATABASE_URL` before running any migration command:
+
+```bash
+export DATABASE_URL=postgres://postgres:postgres@localhost:5432/prompting_school
+npm run migrate:up
+```
+
+### File format
+
+Each file in `migrations/` is a `.sql` file with two sections separated by `-- Down Migration`:
+
+```sql
+-- Up migration SQL
+CREATE TABLE example (...);
+
+-- Down Migration
+DROP TABLE IF EXISTS example;
+```
+
+### Where migrations run
+
+| Environment | How |
+|-------------|-----|
+| Local dev | `npm run migrate:up` (manual, or via `docker-compose run migrate`) |
+| CI (integration & e2e) | `npm run migrate:up` step in `qa.yml` before the test suite |
+| Production (Railway) | `docker/entrypoint.sh` runs migrations automatically before the Next.js server starts |
+
+### Adding a migration
+
+```bash
+# Creates migrations/{timestamp}_{name}.sql
+npm run migrate:create add_new_column
+# Edit the file: write UP SQL above "-- Down Migration", DOWN SQL below
+npm run migrate:up
+```
+
+node-pg-migrate tracks applied migrations in a `pgmigrations` table. Running `migrate:up` is idempotent — already-applied migrations are skipped.
+
 ## Environment Variables
 
 | Variable | Where used | Description |
 |----------|-----------|-------------|
-| `NEXT_PUBLIC_SUPABASE_URL` | Browser + Server | Supabase project URL |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Browser + Server | Anon/public key for client-side queries |
-| `SUPABASE_SERVICE_ROLE_KEY` | Server only | Bypasses RLS for admin operations in Route Handlers |
+| `DATABASE_URL` | Server + migrations | PostgreSQL connection string |
+| `SESSION_SECRET` | Server only | Secret for iron-session cookie signing (≥ 32 chars) |
+| `ANTHROPIC_API_KEY` | Server only | Anthropic Claude API key for prompt execution and AI judge |
+| `OPENAI_API_KEY` | Server only | OpenAI API key (optional, for OpenAI exercises) |
+| `GOOGLE_API_KEY` | Server only | Google Generative AI key (optional, for Google exercises) |
+| `STRIPE_SECRET_KEY` | Server only | Stripe secret key for billing |
+| `STRIPE_WEBHOOK_SECRET` | Server only | Stripe webhook signature verification |
+| `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` | Browser | Stripe publishable key |
+| `RESEND_API_KEY` | Server only | Resend API key for transactional email |
+| `EMAIL_FROM` | Server only | Sender address for transactional email |
+| `NEXT_PUBLIC_APP_URL` | Browser + Server | Public base URL (e.g. `https://app.example.com`) |
+| `GOOGLE_CLIENT_ID` | Server only | Google OAuth client ID |
+| `GOOGLE_CLIENT_SECRET` | Server only | Google OAuth client secret |
 
 ## Related Docs
 
-- [`docs/schema.md`](schema.md) — Full database schema and RLS policies
-- [`../docs/VISION.md`](../../docs/VISION.md) — Product vision and success metrics
-- [`../docs/ROADMAP.md`](../../docs/ROADMAP.md) — Milestone plan (M1–M5)
+- [`docs/schema.md`](schema.md) — Full database schema
+- [`../docs/ROADMAP.md`](ROADMAP.md) — Milestone plan
