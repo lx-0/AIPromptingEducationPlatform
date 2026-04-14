@@ -46,7 +46,7 @@ export async function GET(
 
   // Fetch exercise steps for multi_step exercises
   const exerciseIds = exercises.map((e) => e.id);
-  let stepsByExercise: Record<string, { step_number: number; instructions: string; system_prompt: string | null }[]> = {};
+  const stepsByExercise: Record<string, { step_number: number; instructions: string; system_prompt: string | null }[]> = {};
 
   if (exerciseIds.length > 0) {
     const stepsResult = await pool.query(
