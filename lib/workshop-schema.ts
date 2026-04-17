@@ -1,0 +1,1 @@
+export const WORKSHOP_EXPORT_SCHEMA_VERSION = "1.0";

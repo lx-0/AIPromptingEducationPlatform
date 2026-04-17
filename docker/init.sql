@@ -175,14 +175,12 @@ CREATE TABLE email_preferences (
 -- ============================================================
 CREATE TABLE llm_call_logs (
   id              UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
-  submission_id   UUID        REFERENCES submissions(id) ON DELETE SET NULL,
+  submission_id   UUID        NOT NULL REFERENCES submissions(id) ON DELETE CASCADE,
   provider        TEXT        NOT NULL,
   model           TEXT        NOT NULL,
-  input_tokens    INTEGER     NOT NULL DEFAULT 0,
-  output_tokens   INTEGER     NOT NULL DEFAULT 0,
-  called_at       TIMESTAMPTZ NOT NULL DEFAULT NOW()
+  input_tokens    INTEGER,
+  output_tokens   INTEGER,
+  logged_at       TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 CREATE INDEX idx_llm_call_logs_submission_id ON llm_call_logs (submission_id);
-CREATE INDEX idx_llm_call_logs_provider      ON llm_call_logs (provider);
-CREATE INDEX idx_llm_call_logs_called_at     ON llm_call_logs (called_at);

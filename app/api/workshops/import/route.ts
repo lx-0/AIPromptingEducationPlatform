@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import pool from "@/lib/db";
 import { getSession } from "@/lib/session";
 import { isPaidSubscriber, FREE_TIER_LIMITS } from "@/lib/billing";
-import { WORKSHOP_EXPORT_SCHEMA_VERSION } from "@/app/api/workshops/[id]/export/route";
+import { WORKSHOP_EXPORT_SCHEMA_VERSION } from "@/lib/workshop-schema";
 
 interface ExerciseStep {
   step_number: number;

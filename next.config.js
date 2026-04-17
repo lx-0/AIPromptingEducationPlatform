@@ -1,6 +1,9 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   output: "standalone",
+  experimental: {
+    cpus: 2,
+  },
 
   // Static asset long-term caching
   async headers() {

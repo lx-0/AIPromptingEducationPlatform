@@ -1,8 +1,7 @@
 import { NextResponse } from "next/server";
 import pool from "@/lib/db";
 import { getSession } from "@/lib/session";
-
-export const WORKSHOP_EXPORT_SCHEMA_VERSION = "1.0";
+import { WORKSHOP_EXPORT_SCHEMA_VERSION } from "@/lib/workshop-schema";
 
 // GET /api/workshops/:id/export
 // Downloads the full workshop as a JSON file (metadata + exercises + exercise steps).
