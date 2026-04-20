@@ -36,6 +36,19 @@ export async function PATCH(
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
+  const ownerCheck = await pool.query(
+    `SELECT w.instructor_id FROM exercises e
+     JOIN workshops w ON w.id = e.workshop_id
+     WHERE e.id = $1`,
+    [id]
+  );
+  if (ownerCheck.rows.length === 0) {
+    return NextResponse.json({ error: "Not found" }, { status: 404 });
+  }
+  if (ownerCheck.rows[0].instructor_id !== session.userId && !session.isAdmin) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
   const body = await request.json();
   const {
     title,
@@ -131,6 +144,19 @@ export async function DELETE(
 
   if (!session.userId) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const ownerCheck = await pool.query(
+    `SELECT w.instructor_id FROM exercises e
+     JOIN workshops w ON w.id = e.workshop_id
+     WHERE e.id = $1`,
+    [id]
+  );
+  if (ownerCheck.rows.length === 0) {
+    return NextResponse.json({ error: "Not found" }, { status: 404 });
+  }
+  if (ownerCheck.rows[0].instructor_id !== session.userId && !session.isAdmin) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
   await pool.query("DELETE FROM exercises WHERE id = $1", [id]);

@@ -36,6 +36,17 @@ export async function PATCH(
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
+  const ownerCheck = await pool.query(
+    "SELECT instructor_id FROM workshops WHERE id = $1",
+    [id]
+  );
+  if (ownerCheck.rows.length === 0) {
+    return NextResponse.json({ error: "Not found" }, { status: 404 });
+  }
+  if (ownerCheck.rows[0].instructor_id !== session.userId && !session.isAdmin) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
   const body = await request.json();
   const { title, description, category_id, is_featured, default_provider } = body;
 
@@ -81,6 +92,7 @@ export async function PATCH(
   if (result.rows.length === 0) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
+
 
   return NextResponse.json(result.rows[0]);
 }

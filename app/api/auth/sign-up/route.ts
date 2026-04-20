@@ -5,25 +5,46 @@ import pool from "@/lib/db";
 import { getSession } from "@/lib/session";
 import { sendWelcomeEmail } from "@/lib/email";
 import { scheduleDripSeries } from "@/lib/queue";
+import { checkRateLimit, rateLimitHeaders } from "@/lib/rate-limit";
+import { checkCsrfOrigin } from "@/lib/csrf";
+import { z } from "zod";
+
+const signUpSchema = z.object({
+  email: z.string().email("Invalid email address"),
+  password: z.string().min(8, "Password must be at least 8 characters"),
+  displayName: z.string().min(1, "Display name is required").max(100),
+  role: z.enum(["instructor", "trainee"]),
+  referralCode: z.string().optional(),
+});
 
 export async function POST(request: Request) {
-  const body = await request.json();
-  const { email, password, displayName, role, referralCode } = body;
-
-  if (!email || !password || !displayName || !role) {
-    return NextResponse.json({ error: "All fields are required" }, { status: 400 });
+  const csrfError = checkCsrfOrigin(request);
+  if (csrfError) {
+    return NextResponse.json({ error: csrfError }, { status: 403 });
   }
 
-  if (!["instructor", "trainee"].includes(role)) {
-    return NextResponse.json({ error: "Invalid role" }, { status: 400 });
-  }
-
-  if (password.length < 8) {
+  const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
+  const { allowed, remaining, resetAt } = await checkRateLimit(
+    `sign-up:${ip}`,
+    5,
+    3600
+  );
+  if (!allowed) {
     return NextResponse.json(
-      { error: "Password must be at least 8 characters" },
+      { error: "Too many sign-up attempts. Please try again later." },
+      { status: 429, headers: rateLimitHeaders(remaining, resetAt) }
+    );
+  }
+
+  const raw = await request.json();
+  const parsed = signUpSchema.safeParse(raw);
+  if (!parsed.success) {
+    return NextResponse.json(
+      { error: parsed.error.issues[0]?.message ?? "Invalid input" },
       { status: 400 }
     );
   }
+  const { email, password, displayName, role, referralCode } = parsed.data;
 
   const client = await pool.connect();
   try {

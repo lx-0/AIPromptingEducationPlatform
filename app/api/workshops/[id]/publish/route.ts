@@ -21,6 +21,17 @@ export async function POST(
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
+  const ownerCheck = await pool.query(
+    "SELECT instructor_id FROM workshops WHERE id = $1",
+    [id]
+  );
+  if (ownerCheck.rows.length === 0) {
+    return NextResponse.json({ error: "Not found" }, { status: 404 });
+  }
+  if (ownerCheck.rows[0].instructor_id !== session.userId && !session.isAdmin) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
   // Optional: list of additional email addresses to send invite to
   let inviteEmails: string[] = [];
   try {
@@ -49,6 +60,7 @@ export async function POST(
   if (result.rows.length === 0) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
+
 
   const workshop = result.rows[0];
   const finalCode: string = workshop.invite_code;

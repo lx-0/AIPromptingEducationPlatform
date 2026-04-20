@@ -94,8 +94,8 @@ export async function POST(
   const rateResult = await pool.query<{ count: string }>(
     `SELECT COUNT(*) as count FROM submissions
      WHERE trainee_id = $1
-       AND submitted_at > NOW() - INTERVAL '${RATE_LIMIT_WINDOW_SECONDS} seconds'`,
-    [session.userId]
+       AND submitted_at > NOW() - ($2 * INTERVAL '1 second')`,
+    [session.userId, RATE_LIMIT_WINDOW_SECONDS]
   );
   const recentCount = parseInt(rateResult.rows[0].count, 10);
   if (recentCount >= RATE_LIMIT_MAX) {

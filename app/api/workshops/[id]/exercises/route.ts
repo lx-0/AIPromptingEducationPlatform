@@ -2,6 +2,23 @@ import { NextResponse } from "next/server";
 import pool from "@/lib/db";
 import { getSession } from "@/lib/session";
 import { isPaidSubscriber, FREE_TIER_LIMITS } from "@/lib/billing";
+import { z } from "zod";
+
+const createExerciseSchema = z.object({
+  title: z.string().min(1, "title is required").max(255),
+  instructions: z.string().min(1, "instructions is required"),
+  system_prompt: z.string().optional(),
+  model_config: z.record(z.unknown()).optional(),
+  rubric: z.array(z.unknown()).optional(),
+  sort_order: z.number().int().optional(),
+  exercise_type: z.enum(["standard", "multi_step", "comparison", "constrained"]).optional(),
+  difficulty: z.enum(["beginner", "intermediate", "advanced"]).optional(),
+  constraints: z.record(z.unknown()).optional(),
+  steps: z.array(z.object({
+    instructions: z.string(),
+    system_prompt: z.string().optional(),
+  })).optional(),
+});
 
 export async function GET(
   _request: Request,
@@ -33,6 +50,17 @@ export async function POST(
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
+  const ownerCheck = await pool.query(
+    "SELECT instructor_id FROM workshops WHERE id = $1",
+    [id]
+  );
+  if (ownerCheck.rows.length === 0) {
+    return NextResponse.json({ error: "Not found" }, { status: 404 });
+  }
+  if (ownerCheck.rows[0].instructor_id !== session.userId && !session.isAdmin) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
   // Enforce free-tier exercises-per-workshop limit
   const paid = await isPaidSubscriber(session.userId);
   if (!paid) {
@@ -52,7 +80,14 @@ export async function POST(
     }
   }
 
-  const body = await request.json();
+  const raw = await request.json();
+  const parsed = createExerciseSchema.safeParse(raw);
+  if (!parsed.success) {
+    return NextResponse.json(
+      { error: parsed.error.issues[0]?.message ?? "Invalid input" },
+      { status: 400 }
+    );
+  }
   const {
     title,
     instructions,
@@ -64,24 +99,7 @@ export async function POST(
     difficulty,
     constraints,
     steps,
-  } = body;
-
-  if (!title || !instructions) {
-    return NextResponse.json(
-      { error: "title and instructions are required" },
-      { status: 400 }
-    );
-  }
-
-  const validTypes = ["standard", "multi_step", "comparison", "constrained"];
-  if (exercise_type && !validTypes.includes(exercise_type)) {
-    return NextResponse.json({ error: "Invalid exercise_type" }, { status: 400 });
-  }
-
-  const validDifficulties = ["beginner", "intermediate", "advanced"];
-  if (difficulty && !validDifficulties.includes(difficulty)) {
-    return NextResponse.json({ error: "Invalid difficulty" }, { status: 400 });
-  }
+  } = parsed.data;
 
   const client = await pool.connect();
   try {
