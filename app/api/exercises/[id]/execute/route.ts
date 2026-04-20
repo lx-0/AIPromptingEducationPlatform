@@ -428,10 +428,11 @@ async function handleMultiStep(
   const currentStep = steps[stepNumber] ?? steps[0];
   const isLastStep = stepNumber >= steps.length - 1;
 
-  // Build messages with previous outputs as context
+  // Build messages with interleaved user/assistant turns so the first message is always user-role
   const messages: { role: "user" | "assistant"; content: string }[] = [];
   for (let i = 0; i < previousOutputs.length; i++) {
-    // Include previous step context as assistant messages
+    const priorStepContext = steps[i]?.instructions ?? `Step ${i + 1}`;
+    messages.push({ role: "user", content: priorStepContext });
     messages.push({ role: "assistant", content: previousOutputs[i] });
   }
   messages.push({ role: "user", content: promptText.trim() });
