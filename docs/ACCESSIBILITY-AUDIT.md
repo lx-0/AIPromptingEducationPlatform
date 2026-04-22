@@ -1,299 +1,323 @@
-# Accessibility Audit — AI Prompting Education Platform
+# Accessibility & Performance Audit — AI Prompting Education Platform
 
 **Standard:** WCAG 2.2
-**Date:** 2026-03-16
-**Scope:** All app pages and client components
-**Auditor:** UX Researcher (PROA-4)
+**Date:** 2026-04-20
+**Scope:** Core user flows — workshop list, exercise detail, submission flow
+**Auditor:** UX Researcher (PROA-73)
+**Prior audit:** 2026-03-16 (PROA-4)
 
 ---
 
 ## Executive Summary
 
-The platform has a solid foundation (semantic HTML in forms, proper label associations, correct heading hierarchy on most pages) but has **12+ Level A violations** and **8+ Level AA violations** that must be addressed before the platform can claim WCAG 2.2 compliance.
+Most Level A violations from the March 2026 audit have been remediated. However, **4 major new violations** and **5 minor issues** were found in this sweep. The estimated Lighthouse a11y score is **~80–85**, below the target of 90.
 
-**Most critical gaps:**
-- No skip-to-content link (all keyboard/SR users are blocked from efficient navigation)
-- Dynamic content (errors, streaming responses) has no live region announcements
-- Interactive card-style links lack visible keyboard focus indicators
-- Breadcrumb navigation is not semantically marked up
+**Key regressions / new issues:**
+- `maximum-scale=1` viewport blocks user zooming (WCAG 1.4.4) — affects all pages
+- Search input in workshop list has no programmatic label (WCAG 1.3.1)
+- Comparison exercise textareas have visual-only labels, not associated with inputs (WCAG 1.3.1)
+- Difficulty filter buttons do not communicate selected state to assistive technology (WCAG 4.1.2)
 
----
-
-## Files Audited
-
-| File | Role |
-|------|------|
-| `app/layout.tsx` | Root layout |
-| `app/page.tsx` | Landing page |
-| `app/dashboard/page.tsx` | Authenticated dashboard |
-| `app/auth/sign-in/page.tsx` | Sign-in form |
-| `app/auth/sign-up/page.tsx` | Sign-up / role selection form |
-| `app/workshops/page.tsx` | Workshop listing |
-| `app/workshops/[id]/page.tsx` | Workshop detail |
-| `app/workshops/[id]/exercises/[exerciseId]/page.tsx` | Exercise page wrapper |
-| `app/workshops/[id]/exercises/[exerciseId]/ExerciseClient.tsx` | Prompt submission + streaming response |
+Mobile responsiveness is good overall. Static asset caching is properly configured.
 
 ---
 
-## Findings
+## What Was Fixed Since March 2026 ✅
 
-### 1. Skip-to-Content Link Missing — WCAG 2.4.1 (A) ❌
+| Issue (PROA-4) | Status |
+|---|---|
+| Skip-to-content link | Fixed — present in `app/layout.tsx` |
+| Error messages missing `role="alert"` | Fixed — auth pages and ExerciseClient |
+| Streaming response missing `aria-live` | Fixed — `aria-live="polite"` + `aria-busy` on response div |
+| Loading states missing `aria-busy` | Fixed — submit buttons in ExerciseClient and auth |
+| Textarea missing `aria-labelledby` | Fixed — `aria-labelledby="prompt-label"` in StandardClient |
+| Card focus indicators missing | Fixed — `focus:ring-2 focus:ring-blue-500` on exercise list items |
+| Nav elements missing `aria-label` | Fixed — all nav elements audited have `aria-label` |
 
-**All pages** — No skip navigation link exists anywhere in the layout.
+---
 
-Keyboard-only users must tab through the entire navigation bar on every page load before reaching main content.
+## New Findings — April 2026
 
-**Fix:** Add to `app/layout.tsx` before `<body>` content:
+### F1. Viewport Blocks User Zoom — WCAG 1.4.4 (AA) ❌ **CRITICAL**
+
+**Affected pages:** All pages
+
+The generated HTML contains:
 ```html
-<a href="#main-content" className="sr-only focus:not-sr-only focus:absolute focus:z-50 focus:p-4 focus:bg-white focus:text-blue-600">
-  Skip to main content
-</a>
-```
-And add `id="main-content"` to each page's `<main>` element.
-
----
-
-### 2. Error Messages — No Live Region — WCAG 4.1.3 (AA) ❌
-
-**Files:** `app/auth/sign-in/page.tsx`, `app/auth/sign-up/page.tsx`, `ExerciseClient.tsx`
-
-Error divs are rendered conditionally but have no `role="alert"` or `aria-live` attribute. Screen readers will not announce errors when they appear.
-
-**Examples:**
-- Sign-in error (line 44-46): `<div className="... text-red-700">{error}</div>`
-- Exercise error: inline error text with no ARIA role
-
-**Fix:** Add `role="alert"` to all error message containers:
-```html
-<div role="alert" aria-live="polite" className="... text-red-700">{error}</div>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
 ```
 
+`maximum-scale=1` prevents users from pinching-to-zoom, which is required by WCAG 1.4.4 (Resize Text). This blocks low-vision users who rely on viewport zoom.
+
+The value is injected by Next.js when no explicit `viewport` export is defined in the root layout.
+
+**Fix:** Add a `viewport` export to `app/layout.tsx`:
+```typescript
+import type { Viewport } from "next";
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  // Do NOT set maximumScale — that overrides the Next.js default and removes the restriction
+};
+```
+
+**Files:** `app/layout.tsx`
+
 ---
 
-### 3. Streaming Response — No Live Region — WCAG 4.1.3 (AA) ❌
+### F2. Search Input Missing Programmatic Label — WCAG 1.3.1 (A) ❌ **MAJOR**
 
-**File:** `ExerciseClient.tsx` (lines 190–200)
+**File:** `app/workshops/WorkshopDiscovery.tsx` (line 107–113)
 
-The streaming AI response is written into a div with no `aria-live` region. Screen reader users receive no feedback that a response has arrived or is being updated.
+The workshop search input uses only a `placeholder` attribute for labeling. Placeholder text is not a programmatic label — it disappears when the user types and is not reliably read by all screen readers.
+
+```jsx
+// Current — no label
+<input
+  type="search"
+  placeholder="Search workshops…"
+  ...
+/>
+```
 
 **Fix:**
-```html
-<div aria-live="polite" aria-label="AI response">
-  {response}
-</div>
+```jsx
+<label htmlFor="workshop-search" className="sr-only">Search workshops</label>
+<input
+  id="workshop-search"
+  type="search"
+  placeholder="Search workshops…"
+  ...
+/>
 ```
-Also add `aria-busy="true"` while streaming, then remove it on completion.
+
+Or use `aria-label`:
+```jsx
+<input
+  type="search"
+  aria-label="Search workshops"
+  placeholder="Search workshops…"
+  ...
+/>
+```
 
 ---
 
-### 4. Form Loading States — Missing `aria-busy` — WCAG 4.1.3 (AA) ❌
+### F3. Comparison Exercise Labels Not Associated — WCAG 1.3.1 (A) ❌ **MAJOR**
 
-**Files:** `app/auth/sign-in/page.tsx`, `app/auth/sign-up/page.tsx`, `ExerciseClient.tsx`
+**File:** `app/workshops/[id]/exercises/[exerciseId]/ExerciseClient.tsx` (lines 1327–1350)
 
-Buttons change label text ("Signing in…", "Running…") during async operations but do not set `aria-busy` or `aria-disabled` on the form/button. Screen readers may not convey the loading state reliably.
+The Prompt A and Prompt B textareas have visual `<label>` elements but they are not programmatically linked — no `htmlFor`/`id` pairing.
+
+```jsx
+// Current — visual label not linked
+<label className="...">Prompt A</label>
+<textarea value={promptA} ... />
+```
+
+Screen readers cannot associate the label with the field; the textarea is announced as "edit text" with no context.
 
 **Fix:**
-```html
-<button aria-busy={isLoading} disabled={isLoading}>
-  {isLoading ? "Signing in…" : "Sign in"}
+```jsx
+<label htmlFor="prompt-a" className="...">Prompt A</label>
+<textarea id="prompt-a" value={promptA} ... />
+
+<label htmlFor="prompt-b" className="...">Prompt B</label>
+<textarea id="prompt-b" value={promptB} ... />
+```
+
+---
+
+### F4. Filter Buttons Don't Communicate Selected State — WCAG 4.1.2 (A) ❌ **MAJOR**
+
+**File:** `app/workshops/WorkshopDiscovery.tsx` (lines 119–139)
+
+The difficulty filter buttons (All / Beginner / Intermediate / Advanced) change appearance when active but never set `aria-pressed`. Screen reader users cannot determine which filter is currently active.
+
+```jsx
+// Current — no aria-pressed
+<button onClick={() => setDifficultyFilter(level)} className={...}>
+  {label}
+</button>
+```
+
+**Fix:**
+```jsx
+<button
+  onClick={() => setDifficultyFilter(level)}
+  aria-pressed={difficultyFilter === level}
+  className={...}
+>
+  {label}
 </button>
 ```
 
 ---
 
-### 5. Textarea Missing Associated Label — WCAG 1.3.1 (A) ❌
+### F5. Enroll Buttons Have Ambiguous Names — WCAG 2.4.6 (AA) ⚠️ **MAJOR**
 
-**File:** `ExerciseClient.tsx` (line 164)
+**File:** `app/workshops/WorkshopDiscovery.tsx` (lines 234–239)
 
-The textarea for prompt input is not programmatically associated with a label. The nearby `<h2>Your prompt</h2>` provides visual context but is not a semantic label.
-
-**Fix:** Replace the `<h2>` with a `<label>` or add `aria-labelledby`:
-```html
-<label htmlFor="prompt-input" className="...">Your prompt</label>
-<textarea id="prompt-input" ... />
-```
-Or:
-```html
-<h2 id="prompt-label">Your prompt</h2>
-<textarea aria-labelledby="prompt-label" ... />
-```
-
----
-
-### 6. Role Selection — Missing `<fieldset>/<legend>` — WCAG 1.3.1 (A) ❌
-
-**File:** `app/auth/sign-up/page.tsx` (lines 120–144)
-
-The "I am a…" radio group uses a `<p>` element as a visual group label instead of a `<fieldset>` with a `<legend>`. Screen readers cannot associate the group label with the individual radio choices.
+Each workshop card has an "Enroll" button. When navigating by button with a screen reader, all buttons are announced as "Enroll" with no workshop context. Screen readers cannot distinguish which workshop each button belongs to.
 
 **Fix:**
-```html
-<fieldset>
-  <legend className="block text-sm font-medium text-gray-700 mb-2">I am a…</legend>
-  <div className="grid grid-cols-2 gap-3">
-    {/* radio options */}
-  </div>
-</fieldset>
+```jsx
+<button
+  onClick={() => handleEnroll(workshop.id)}
+  disabled={isLoading}
+  aria-label={`Enroll in ${workshop.title}`}
+  className="..."
+>
+  {isLoading ? "Enrolling…" : "Enroll"}
+</button>
 ```
 
 ---
 
-### 7. Navigation Elements Missing `aria-label` — WCAG 1.3.1 (A) ❌
+### F6. Multi-Step Textarea Missing Label — WCAG 2.4.6 (AA) ⚠️ **MINOR**
 
-**Files:** `app/dashboard/page.tsx`, `app/workshops/page.tsx`, workshop detail pages
+**File:** `ExerciseClient.tsx` — `MultiStepClient` component (line 1134)
 
-When multiple `<nav>` elements exist on a page (e.g., main nav + breadcrumb), they must have distinct `aria-label` attributes so screen reader users can differentiate them.
+The textarea in the multi-step exercise has only a `placeholder` attribute. No `aria-label` or `aria-labelledby` is present. (Compare: `StandardClient` correctly uses `aria-labelledby="prompt-label"`.)
 
 **Fix:**
-```html
-<nav aria-label="Main navigation">...</nav>
-<nav aria-label="Breadcrumb">...</nav>
+```jsx
+<textarea
+  aria-label={`Step ${currentStep + 1} prompt`}
+  placeholder={`Write your prompt for step ${currentStep + 1}…`}
+  ...
+/>
 ```
 
 ---
 
-### 8. Breadcrumb Not Semantically Structured — WCAG 1.3.1 (A) ❌
+### F7. Step Progress Indicator Lacks Screen Reader Description — WCAG 1.1.1 (A) ⚠️ **MINOR**
 
-**File:** `app/workshops/[id]/exercises/[exerciseId]/page.tsx` (lines 53–57)
+**File:** `ExerciseClient.tsx` — `MultiStepClient` (lines 1074–1100)
 
-Breadcrumb uses plain `<div>` and `<span>` elements. No `aria-label="Breadcrumb"` nav wrapper, no `aria-current="page"` on the final item, and `/` separators are read aloud.
+The multi-step progress dots are purely visual. A screen reader user receives no indication of which step they are on or how many steps exist.
+
+**Fix:** Add `aria-label` to the progress container:
+```jsx
+<div
+  className="flex items-center gap-2"
+  role="group"
+  aria-label={`Exercise progress: step ${currentStep + 1} of ${totalSteps}`}
+>
+  {steps.map((_, i) => (
+    <div
+      key={i}
+      aria-label={i < currentStep ? `Step ${i + 1} complete` : i === currentStep ? `Step ${i + 1} current` : `Step ${i + 1}`}
+      ...
+    />
+  ))}
+</div>
+```
+
+---
+
+### F8. LoadingSpinner SVG Missing aria-hidden — WCAG 1.1.1 (A) ⚠️ **MINOR**
+
+**File:** `ExerciseClient.tsx` — `LoadingSpinner` component (lines 167–179)
+
+The `LoadingSpinner` SVG does not have `aria-hidden="true"`. When rendered inside a section that already has loading state announced via `aria-busy`, the SVG is announced as unlabeled image, creating noise.
 
 **Fix:**
-```html
-<nav aria-label="Breadcrumb">
-  <ol className="flex items-center gap-2">
-    <li><a href="/workshops">Workshops</a></li>
-    <li aria-hidden="true">/</li>
-    <li><a href={`/workshops/${workshopId}`}>{workshopTitle}</a></li>
-    <li aria-hidden="true">/</li>
-    <li aria-current="page">{exerciseTitle}</li>
-  </ol>
-</nav>
+```jsx
+<svg
+  className={`animate-spin ${className ?? "h-5 w-5"}`}
+  aria-hidden="true"
+  ...
+>
 ```
 
 ---
 
-### 9. Interactive Cards Missing Focus Indicator — WCAG 2.4.7 (AA) ❌
+### F9. Emoji in Link Text Without Context — WCAG 1.1.1 (A) ⚠️ **MINOR**
 
-**Files:** `app/dashboard/page.tsx`, `app/workshops/page.tsx`, `app/workshops/[id]/page.tsx`
+**File:** `app/workshops/[id]/page.tsx` (line 306)
 
-Card-style link elements lack `focus:ring` or `focus:outline` Tailwind classes. Keyboard users cannot visually identify which card is focused.
-
-**Affected elements:** Workshop cards, exercise list items, "Browse Workshops" dashboard card.
-
-**Fix:** Add to all card `<a>` elements:
-```
-focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2
+```jsx
+<Link href={`/workshops/${id}/leaderboard`}>
+  🏆 Leaderboard
+</Link>
 ```
 
----
+The trophy emoji is read aloud by screen readers as "trophy emoji". This is tolerable but not ideal.
 
-### 10. Dashboard Missing H1 — WCAG 1.3.1 (A) ❌
-
-**File:** `app/dashboard/page.tsx`
-
-The dashboard page has no `<h1>` element. The logo is rendered as a `<span>` and the first heading-like text is a welcome message `<p>`. Screen reader users have no page identity landmark.
-
-**Fix:** Add a visible or visually-hidden `<h1>` early in the page:
-```html
-<h1 className="sr-only">Dashboard</h1>
-```
-Or promote the welcome message to `<h1>`.
-
----
-
-### 11. Color Contrast — Needs Verification — WCAG 1.4.3 (AA) ⚠️
-
-The following Tailwind color combinations appear throughout the app and may fail the 4.5:1 contrast ratio requirement for normal text:
-
-| Foreground | Background | Usage | Status |
-|-----------|-----------|-------|--------|
-| `text-gray-600` | `bg-gray-50` / white | Subtitles, descriptions | **Verify** |
-| `text-blue-500` | white | Inline links | **Likely fail** (4.2:1) |
-| `text-blue-600` | white | Nav links, headings | **Verify** (4.7:1 — may pass) |
-| `animate-pulse text-blue-500` | white | Streaming indicator | **Fail + motion concern** |
-
-**Action:** Run the site through axe DevTools or WAVE; replace `blue-500` link text with `blue-700` for sufficient contrast. Remove or provide `prefers-reduced-motion` override for the `animate-pulse` class.
-
----
-
-### 12. Animated Content — No Motion Preference — WCAG 2.3.3 (AAA) ⚠️
-
-**File:** `ExerciseClient.tsx`
-
-The "streaming…" indicator uses `animate-pulse`. Users with vestibular disorders or epilepsy may be affected.
-
-**Fix:**
-```css
-@media (prefers-reduced-motion: reduce) {
-  .animate-pulse { animation: none; }
-}
-```
-Tailwind's `motion-safe:animate-pulse` utility handles this:
-```html
-<span className="motion-safe:animate-pulse">streaming…</span>
+**Recommended fix:**
+```jsx
+<Link href={`/workshops/${id}/leaderboard`}>
+  <span aria-hidden="true">🏆</span> Leaderboard
+</Link>
 ```
 
 ---
 
-## What Passes ✅
+## Performance Findings
 
-- `lang="en"` set on `<html>` element
-- All form inputs have associated `<label>` elements with `htmlFor`
-- `required` attributes present on mandatory form fields
-- `type="email"` and `type="password"` used correctly
-- Form submit buttons use `<button type="submit">` (not `<div>`)
-- Sign-out uses a `<form>` POST action (not a `<a>` link)
-- Images have descriptive alt text
-- Heading hierarchy (H1→H2→H3) is correct on workshop and exercise pages
-- `<main>` landmark present on all pages
-- Keyboard tab order follows visual layout (left-to-right, top-to-bottom)
-- Form focus rings on inputs and submit buttons (sign-in/sign-up)
+| Area | Status | Notes |
+|---|---|---|
+| Static asset caching | ✅ Pass | `max-age=31536000, immutable` on `/_next/static/*` |
+| Code splitting | ✅ Pass | Dynamic imports for `PublishPanel`, `DefaultProviderPanel`, `ReviewSection` |
+| Server-side data fetching | ✅ Pass | Workshop data fetched in server components |
+| Image caching | ✅ Pass | `max-age=86400` with stale-while-revalidate |
+| Font loading | ✅ Pass | `next/font/google` with `subsets: ["latin"]` |
+| Mobile font-size | ✅ Pass | `font-size: 16px` for all inputs on mobile (prevents iOS auto-zoom) |
 
----
-
-## Remediation Plan
-
-### Phase 1 — Critical (Level A, affects all users)
-
-| # | Issue | File(s) | Effort |
-|---|-------|---------|--------|
-| 1 | Skip-to-content link | `app/layout.tsx` | XS |
-| 2 | Error messages: add `role="alert"` | Auth pages, ExerciseClient | XS |
-| 3 | Textarea: add `<label>` or `aria-labelledby` | `ExerciseClient.tsx` | XS |
-| 4 | Role fieldset: `<fieldset><legend>` | `sign-up/page.tsx` | XS |
-| 5 | Nav `aria-label` attributes | All pages with nav | XS |
-| 6 | Breadcrumb semantic markup | Exercise page wrapper | S |
-| 7 | Dashboard `<h1>` | `dashboard/page.tsx` | XS |
-
-### Phase 2 — Important (Level AA, affects keyboard/SR users)
-
-| # | Issue | File(s) | Effort |
-|---|-------|---------|--------|
-| 8 | Streaming response: `aria-live` + `aria-busy` | `ExerciseClient.tsx` | S |
-| 9 | Loading states: `aria-busy` on buttons | Auth pages, ExerciseClient | XS |
-| 10 | Card focus indicators: `focus:ring-2` | Dashboard, workshops | XS |
-| 11 | Color contrast: replace `blue-500` with `blue-700` | Global | S |
-
-### Phase 3 — Enhancement (AAA / polish)
-
-| # | Issue | File(s) | Effort |
-|---|-------|---------|--------|
-| 12 | Motion: `motion-safe:animate-pulse` | `ExerciseClient.tsx` | XS |
+No critical performance issues found. The main risk is the side-by-side response layout in `ComparisonClient` — on narrow viewports the 2-column grid collapses correctly (`grid-cols-1 sm:grid-cols-2`), so this is safe.
 
 ---
 
-## Recommended Tooling
+## Mobile Responsiveness
 
-- **axe DevTools** (browser extension) — automated per-page scanning
-- **WAVE** — visual overlay of issues
-- **Colour Contrast Analyser** (desktop app) — eyedropper contrast testing
-- **VoiceOver (macOS) / NVDA (Windows)** — manual screen reader testing
-- **@axe-core/react** — integrate automated checks into the test suite
+| Flow | Verdict | Notes |
+|---|---|---|
+| Workshop list | ✅ Pass | Single-column grid, filter chips wrap correctly |
+| Workshop detail | ✅ Pass | Exercise list stacks correctly |
+| Exercise submission (standard) | ✅ Pass | Textarea and button stack cleanly |
+| Exercise submission (multi-step) | ✅ Pass | Step output and form sections stack correctly |
+| Exercise submission (comparison) | ✅ Pass | Side-by-side collapses to single column on mobile |
+| Auth sign-in/sign-up | ✅ Pass | Single-column forms with proper padding |
+
+---
+
+## Summary Scorecard
+
+| Category | Score | Target |
+|---|---|---|
+| Lighthouse a11y (estimated) | ~80–85 | ≥ 90 |
+| WCAG Level A violations | 5 (new) | 0 |
+| WCAG Level AA violations | 2 (new) | 0 |
+| Mobile responsiveness | Pass | Pass |
+| Performance / caching | Pass | Pass |
+
+**Verdict: FAILS** — 4 major violations prevent reaching the ≥ 90 Lighthouse a11y target.
+
+---
+
+## Remediation Priority
+
+| # | Issue | Severity | Effort | WCAG |
+|---|---|---|---|---|
+| F1 | `maximum-scale=1` viewport | Critical | XS | 1.4.4 AA |
+| F2 | Search input missing label | Major | XS | 1.3.1 A |
+| F3 | Comparison textarea unlinked labels | Major | XS | 1.3.1 A |
+| F4 | Filter buttons missing `aria-pressed` | Major | XS | 4.1.2 A |
+| F5 | Enroll buttons ambiguous names | Major | XS | 2.4.6 AA |
+| F6 | Multi-step textarea missing label | Minor | XS | 2.4.6 AA |
+| F7 | Step progress no screen reader description | Minor | S | 1.1.1 A |
+| F8 | LoadingSpinner SVG missing `aria-hidden` | Minor | XS | 1.1.1 A |
+| F9 | Emoji in link text | Minor | XS | 1.1.1 A |
+
+All F1–F5 are XS-effort fixes that should be batched into a single engineering PR.
 
 ---
 
 ## Related Issues
 
-- PROA-4: This audit (source task)
-- Remediation tasks should be created as subtasks under the platform goal
+- PROA-4: March 2026 audit (mostly remediated)
+- PROA-37, PROA-38, PROA-43: Previous a11y regressions
+- PROA-73: This audit
+- Follow-up: Remediation issue to be created
