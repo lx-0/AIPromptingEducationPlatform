@@ -10,8 +10,8 @@ test.describe("Sign-up flow", () => {
   test("sign-up page renders the form", async ({ page }) => {
     await page.goto("/auth/sign-up");
 
-    // Heading / title
-    await expect(page).toHaveTitle(/sign.?up|register|create account/i);
+    // Heading (page title is the generic app name; the H1 identifies the page)
+    await expect(page.getByRole("heading", { name: /sign.?up|register|create.?account/i })).toBeVisible();
 
     // Key form fields
     await expect(page.getByLabel(/email/i)).toBeVisible();
