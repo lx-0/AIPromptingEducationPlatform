@@ -167,6 +167,7 @@ function ScoreDelta({ delta }: { delta: number }) {
 function LoadingSpinner({ className }: { className?: string }) {
   return (
     <svg
+      aria-hidden="true"
       className={`animate-spin ${className ?? "h-5 w-5"}`}
       xmlns="http://www.w3.org/2000/svg"
       fill="none"
@@ -1071,7 +1072,7 @@ function MultiStepClient({
   return (
     <>
       {/* Step progress indicator */}
-      <div className="flex items-center gap-2">
+      <div role="group" aria-label="Step progress" className="flex items-center gap-2">
         {steps.map((_, i) => (
           <div key={i} className="flex items-center gap-2">
             <div
@@ -1126,6 +1127,7 @@ function MultiStepClient({
           </div>
           <form onSubmit={handleSubmit} className="space-y-4">
             <textarea
+              aria-label={`Step ${currentStep + 1} prompt`}
               value={prompt}
               onChange={(e) => setPrompt(e.target.value)}
               rows={6}
@@ -1324,10 +1326,11 @@ function ComparisonClient({
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="mb-1.5 block text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide">
+              <label htmlFor="prompt-a" className="mb-1.5 block text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide">
                 Prompt A
               </label>
               <textarea
+                id="prompt-a"
                 value={promptA}
                 onChange={(e) => setPromptA(e.target.value)}
                 rows={7}
@@ -1337,10 +1340,11 @@ function ComparisonClient({
               />
             </div>
             <div>
-              <label className="mb-1.5 block text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide">
+              <label htmlFor="prompt-b" className="mb-1.5 block text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide">
                 Prompt B
               </label>
               <textarea
+                id="prompt-b"
                 value={promptB}
                 onChange={(e) => setPromptB(e.target.value)}
                 rows={7}

@@ -304,7 +304,7 @@ export default async function WorkshopDetailPage({
               href={`/workshops/${id}/leaderboard`}
               className="shrink-0 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-4 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-300 hover:border-blue-300 dark:hover:border-blue-600 hover:text-blue-700 dark:hover:text-blue-400 transition-colors"
             >
-              🏆 Leaderboard
+              <span aria-hidden="true">🏆</span> Leaderboard
             </Link>
             {isOwner && (
               <>

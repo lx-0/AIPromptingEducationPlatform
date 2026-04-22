@@ -106,6 +106,7 @@ export default function WorkshopDiscovery({
           </svg>
           <input
             type="search"
+            aria-label="Search workshops"
             placeholder="Search workshops…"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
@@ -120,6 +121,7 @@ export default function WorkshopDiscovery({
               <button
                 key={level}
                 type="button"
+                aria-pressed={difficultyFilter === level}
                 onClick={() => setDifficultyFilter(level)}
                 className={`rounded-full px-3 py-1 text-xs font-semibold transition-colors ${
                   difficultyFilter === level
@@ -234,6 +236,7 @@ export default function WorkshopDiscovery({
                     <button
                       onClick={() => handleEnroll(workshop.id)}
                       disabled={isLoading}
+                      aria-label={`Enroll in ${workshop.title}`}
                       className="w-full rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-60 transition-colors"
                     >
                       {isLoading ? "Enrolling…" : "Enroll"}
