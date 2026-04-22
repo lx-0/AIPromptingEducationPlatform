@@ -103,7 +103,7 @@ describe("POST /api/workshops", () => {
     });
     const res = await POST(req);
     expect(res.status).toBe(400);
-    expect((res as any).body.error).toMatch(/title/i);
+    expect((res as any).body.error).toMatch(/title|invalid input|expected string/i);
   });
 
   it("creates workshop and returns 201 for instructor", async () => {

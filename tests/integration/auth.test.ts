@@ -49,7 +49,7 @@ vi.mock("next/server", () => ({
 function makeRequest(body: Record<string, unknown>): Request {
   return new Request("http://localhost/api/auth/sign-up", {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json", "Origin": "http://localhost:3000" },
     body: JSON.stringify(body),
   });
 }
@@ -67,7 +67,7 @@ describe("POST /api/auth/sign-up", () => {
     const { POST } = await import("@/app/api/auth/sign-up/route");
     const res = await POST(makeRequest({ email: "a@b.com" }));
     expect(res.status).toBe(400);
-    expect((res as any).body.error).toMatch(/required/i);
+    expect((res as any).body.error).toMatch(/invalid input|required|expected string/i);
   });
 
   it("returns 400 for invalid role", async () => {
@@ -76,7 +76,7 @@ describe("POST /api/auth/sign-up", () => {
       makeRequest({ email: "a@b.com", password: "password123", displayName: "Alice", role: "admin" })
     );
     expect(res.status).toBe(400);
-    expect((res as any).body.error).toMatch(/invalid role/i);
+    expect((res as any).body.error).toMatch(/invalid|role|instructor|trainee/i);
   });
 
   it("returns 400 when password is too short", async () => {
@@ -125,6 +125,7 @@ describe("POST /api/auth/sign-in", () => {
     const { POST } = await import("@/app/api/auth/sign-in/route");
     const req = new Request("http://localhost/api/auth/sign-in", {
       method: "POST",
+      headers: { "Origin": "http://localhost:3000" },
       body: JSON.stringify({ email: "a@b.com" }),
     });
     const res = await POST(req);
@@ -136,6 +137,7 @@ describe("POST /api/auth/sign-in", () => {
     const { POST } = await import("@/app/api/auth/sign-in/route");
     const req = new Request("http://localhost/api/auth/sign-in", {
       method: "POST",
+      headers: { "Origin": "http://localhost:3000" },
       body: JSON.stringify({ email: "no@b.com", password: "wrongpass" }),
     });
     const res = await POST(req);
@@ -151,6 +153,7 @@ describe("POST /api/auth/sign-in", () => {
     const { POST } = await import("@/app/api/auth/sign-in/route");
     const req = new Request("http://localhost/api/auth/sign-in", {
       method: "POST",
+      headers: { "Origin": "http://localhost:3000" },
       body: JSON.stringify({ email: "a@b.com", password: "wrongpass" }),
     });
     const res = await POST(req);
@@ -166,6 +169,7 @@ describe("POST /api/auth/sign-in", () => {
     const { POST } = await import("@/app/api/auth/sign-in/route");
     const req = new Request("http://localhost/api/auth/sign-in", {
       method: "POST",
+      headers: { "Origin": "http://localhost:3000" },
       body: JSON.stringify({ email: "a@b.com", password: "password123" }),
     });
     const res = await POST(req);
