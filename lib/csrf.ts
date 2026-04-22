@@ -1,4 +1,6 @@
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
+// APP_URL is a runtime server-side variable preferred over NEXT_PUBLIC_APP_URL,
+// which is baked in at build time and may not reflect the deployed origin.
+const APP_URL = process.env.APP_URL ?? process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
 
 // Returns an error response string if the request fails the CSRF check,
 // or null if the request is safe to proceed.
