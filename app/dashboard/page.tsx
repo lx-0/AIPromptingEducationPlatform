@@ -19,6 +19,16 @@ type InstructorWorkshop = {
   created_at: string;
 };
 
+type FeaturedWorkshop = {
+  id: string;
+  title: string;
+  description: string | null;
+  instructor_name: string;
+  category_name: string | null;
+  category_icon: string | null;
+  exercise_count: number;
+};
+
 type ExerciseProgress = {
   exercise_id: string;
   exercise_title: string;
@@ -53,22 +63,43 @@ export default async function DashboardPage() {
 
   let workshopProgress: WorkshopProgress[] = [];
   let instructorWorkshops: InstructorWorkshop[] = [];
+  let featuredWorkshops: FeaturedWorkshop[] = [];
 
   if (session.role === "instructor") {
-    const result = await pool.query<InstructorWorkshop>(
-      `SELECT
-         w.id, w.title, w.description, w.status, w.created_at,
-         COUNT(DISTINCT e.id)::text AS exercise_count,
-         COUNT(DISTINCT en.trainee_id)::text AS enrolled_count
-       FROM workshops w
-       LEFT JOIN exercises e ON e.workshop_id = w.id
-       LEFT JOIN enrollments en ON en.workshop_id = w.id
-       WHERE w.instructor_id = $1
-       GROUP BY w.id
-       ORDER BY w.created_at DESC`,
-      [session.userId]
-    );
-    instructorWorkshops = result.rows;
+    const [ownResult, featuredResult] = await Promise.all([
+      pool.query<InstructorWorkshop>(
+        `SELECT
+           w.id, w.title, w.description, w.status, w.created_at,
+           COUNT(DISTINCT e.id)::text AS exercise_count,
+           COUNT(DISTINCT en.trainee_id)::text AS enrolled_count
+         FROM workshops w
+         LEFT JOIN exercises e ON e.workshop_id = w.id
+         LEFT JOIN enrollments en ON en.workshop_id = w.id
+         WHERE w.instructor_id = $1
+         GROUP BY w.id
+         ORDER BY w.created_at DESC`,
+        [session.userId]
+      ),
+      pool.query<FeaturedWorkshop>(
+        `SELECT
+           w.id, w.title, w.description,
+           u.display_name AS instructor_name,
+           wc.name AS category_name,
+           wc.icon AS category_icon,
+           COUNT(DISTINCT e.id)::int AS exercise_count
+         FROM workshops w
+         JOIN users u ON u.id = w.instructor_id
+         LEFT JOIN workshop_categories wc ON wc.id = w.category_id
+         LEFT JOIN exercises e ON e.workshop_id = w.id
+         WHERE w.status = 'published' AND w.instructor_id <> $1
+         GROUP BY w.id, u.display_name, wc.name, wc.icon
+         ORDER BY w.is_featured DESC, w.trending_score DESC
+         LIMIT 8`,
+        [session.userId]
+      ),
+    ]);
+    instructorWorkshops = ownResult.rows;
+    featuredWorkshops = featuredResult.rows;
   }
 
   if (session.role === "trainee") {
@@ -292,6 +323,45 @@ export default async function DashboardPage() {
                   ))}
                 </ul>
               )}
+            </div>
+          )}
+
+          {session.role === "instructor" && featuredWorkshops.length > 0 && (
+            <div>
+              <div className="mb-4 flex items-center justify-between">
+                <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Featured workshops</h2>
+                <Link
+                  href="/marketplace"
+                  className="text-sm text-blue-600 hover:underline dark:text-blue-400"
+                >
+                  Browse marketplace →
+                </Link>
+              </div>
+              <ul className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {featuredWorkshops.map((w) => (
+                  <li key={w.id}>
+                    <Link
+                      href={`/workshops/${w.id}`}
+                      className="block rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-5 py-4 hover:border-blue-300 dark:hover:border-blue-600 hover:shadow-sm transition-all focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-gray-950"
+                    >
+                      <div className="flex items-start gap-3">
+                        {w.category_icon && (
+                          <span className="text-xl mt-0.5">{w.category_icon}</span>
+                        )}
+                        <div className="min-w-0 flex-1">
+                          <p className="font-semibold text-gray-900 dark:text-gray-100 truncate">{w.title}</p>
+                          {w.description && (
+                            <p className="mt-0.5 text-sm text-gray-500 dark:text-gray-400 line-clamp-2">{w.description}</p>
+                          )}
+                          <p className="mt-1.5 text-xs text-gray-400 dark:text-gray-500">
+                            {w.category_name} · {w.exercise_count} exercises · by {w.instructor_name}
+                          </p>
+                        </div>
+                      </div>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
             </div>
           )}
 
