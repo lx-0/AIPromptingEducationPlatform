@@ -3,7 +3,13 @@ import type { LLMProvider, StreamParams, CompletionParams, CompletionResult } fr
 
 let _anthropic: Anthropic | null = null;
 function getAnthropic(): Anthropic {
-  if (!_anthropic) _anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+  if (!_anthropic) {
+    const apiKey = process.env.ANTHROPIC_API_KEY;
+    if (!apiKey || apiKey === "sk-ant-...") {
+      throw new Error("ANTHROPIC_API_KEY is not configured. Please set it in your environment variables.");
+    }
+    _anthropic = new Anthropic({ apiKey });
+  }
   return _anthropic;
 }
 

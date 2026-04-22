@@ -38,6 +38,21 @@ type Exercise = {
 
 const encoder = new TextEncoder();
 
+function sanitizeProviderError(err: unknown): string {
+  const msg = err instanceof Error ? err.message : "LLM provider error";
+  if (
+    msg.includes("ANTHROPIC_API_KEY") ||
+    msg.includes("apiKey") ||
+    msg.includes("authToken") ||
+    msg.includes("authentication method") ||
+    msg.includes("X-Api-Key") ||
+    msg.includes("Authorization")
+  ) {
+    return "AI provider is not configured. Please contact your administrator.";
+  }
+  return msg;
+}
+
 function sse(data: Record<string, unknown>): Uint8Array {
   return encoder.encode(`data: ${JSON.stringify(data)}\n\n`);
 }
@@ -226,7 +241,7 @@ async function handleStandard(
           );
         }
       } catch (err) {
-        const message = err instanceof Error ? err.message : "LLM provider error";
+        const message = sanitizeProviderError(err);
         await pool.query("UPDATE submissions SET llm_response = $1 WHERE id = $2", [`[Error] ${message}`, submissionId]);
         controller.enqueue(sse({ error: message, submissionId }));
       } finally {
@@ -382,7 +397,7 @@ async function handleComparison(
           })
         );
       } catch (err) {
-        const message = err instanceof Error ? err.message : "LLM provider error";
+        const message = sanitizeProviderError(err);
         await pool.query(
           "UPDATE submissions SET llm_response = $1 WHERE id = $2",
           [`[Error] ${message}`, submissionId]
@@ -507,7 +522,7 @@ async function handleMultiStep(
 
         controller.enqueue(sse(finalPayload));
       } catch (err) {
-        const message = err instanceof Error ? err.message : "LLM provider error";
+        const message = sanitizeProviderError(err);
         await pool.query(
           "UPDATE submissions SET llm_response = $1 WHERE id = $2",
           [`[Error] ${message}`, submissionId]
