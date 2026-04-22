@@ -25,7 +25,7 @@ export async function generateMetadata({
   }>(
     `SELECT w.title, w.description, w.status,
             u.display_name AS instructor_name,
-            COUNT(DISTINCT e.user_id)::text AS enrollment_count
+            COUNT(DISTINCT e.trainee_id)::text AS enrollment_count
      FROM workshops w
      LEFT JOIN users u ON u.id = w.instructor_id
      LEFT JOIN enrollments e ON e.workshop_id = w.id

@@ -28,7 +28,7 @@ export async function GET(
     }
   } else {
     const enrollCheck = await pool.query(
-      "SELECT 1 FROM enrollments WHERE workshop_id = $1 AND user_id = $2",
+      "SELECT 1 FROM enrollments WHERE workshop_id = $1 AND trainee_id = $2",
       [id, session.userId]
     );
     if (enrollCheck.rows.length === 0) {

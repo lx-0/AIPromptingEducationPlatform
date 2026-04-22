@@ -79,7 +79,7 @@ export async function POST(
     // Find enrolled trainees whose display_name matches
     const lookupResult = await pool.query(
       `SELECT p.id FROM profiles p
-       JOIN enrollments e ON e.user_id = p.id
+       JOIN enrollments e ON e.trainee_id = p.id
        WHERE e.workshop_id = $1 AND p.display_name = ANY($2::text[])`,
       [id, names]
     );
