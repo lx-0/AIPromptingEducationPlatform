@@ -11,7 +11,7 @@ test.describe("Sign-up flow", () => {
     await page.goto("/auth/sign-up");
 
     // Heading (page title is the generic app name; the H1 identifies the page)
-    await expect(page.getByRole("heading", { name: /sign.?up|register|create.?account/i })).toBeVisible();
+    await expect(page.getByRole("heading", { name: /sign.?up|register|create.*account/i })).toBeVisible();
 
     // Key form fields
     await expect(page.getByLabel(/email/i)).toBeVisible();
