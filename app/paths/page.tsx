@@ -24,20 +24,37 @@ export default async function LearningPathsPage() {
   }
 
   let paths: PathSummary[] = [];
+  let publishedPaths: PathSummary[] = [];
 
   if (session.role === "instructor") {
-    const result = await pool.query<PathSummary>(
-      `SELECT
-         lp.id, lp.title, lp.description, lp.status, lp.created_at,
-         COUNT(DISTINCT lpw.id)::int AS workshop_count
-       FROM learning_paths lp
-       LEFT JOIN learning_path_workshops lpw ON lpw.path_id = lp.id
-       WHERE lp.instructor_id = $1
-       GROUP BY lp.id
-       ORDER BY lp.created_at DESC`,
-      [session.userId]
-    );
-    paths = result.rows;
+    const [ownResult, pubResult] = await Promise.all([
+      pool.query<PathSummary>(
+        `SELECT
+           lp.id, lp.title, lp.description, lp.status, lp.created_at,
+           COUNT(DISTINCT lpw.id)::int AS workshop_count
+         FROM learning_paths lp
+         LEFT JOIN learning_path_workshops lpw ON lpw.path_id = lp.id
+         WHERE lp.instructor_id = $1
+         GROUP BY lp.id
+         ORDER BY lp.created_at DESC`,
+        [session.userId]
+      ),
+      pool.query<PathSummary>(
+        `SELECT
+           lp.id, lp.title, lp.description, lp.status, lp.created_at,
+           COUNT(DISTINCT lpw.id)::int AS workshop_count,
+           u.display_name AS instructor_name
+         FROM learning_paths lp
+         JOIN users u ON u.id = lp.instructor_id
+         LEFT JOIN learning_path_workshops lpw ON lpw.path_id = lp.id
+         WHERE lp.status = 'published' AND lp.instructor_id <> $1
+         GROUP BY lp.id, u.display_name
+         ORDER BY lp.created_at DESC`,
+        [session.userId]
+      ),
+    ]);
+    paths = ownResult.rows;
+    publishedPaths = pubResult.rows;
   } else {
     const result = await pool.query<PathSummary>(
       `SELECT
@@ -104,6 +121,42 @@ export default async function LearningPathsPage() {
         </div>
 
         <PathDiscovery paths={paths} role={session.role} />
+
+        {session.role === "instructor" && publishedPaths.length > 0 && (
+          <div className="mt-10">
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">
+              Published learning paths
+            </h2>
+            <ul className="space-y-3">
+              {publishedPaths.map((path) => (
+                <li key={path.id}>
+                  <Link
+                    href={`/paths/${path.id}`}
+                    className="flex items-center gap-4 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-6 py-4 hover:border-blue-300 dark:hover:border-blue-600 hover:shadow-sm transition-all"
+                  >
+                    <div className="min-w-0 flex-1">
+                      <p className="font-semibold text-gray-900 dark:text-gray-100">
+                        {path.title}
+                      </p>
+                      {path.description && (
+                        <p className="mt-0.5 text-sm text-gray-500 dark:text-gray-400 line-clamp-2">
+                          {path.description}
+                        </p>
+                      )}
+                      <p className="mt-1 text-xs text-gray-400 dark:text-gray-500">
+                        {path.workshop_count} workshop{path.workshop_count !== 1 ? "s" : ""}
+                        {path.instructor_name ? ` · by ${path.instructor_name}` : ""}
+                      </p>
+                    </div>
+                    <span className="shrink-0 inline-flex items-center rounded-full bg-green-100 dark:bg-green-900 px-2.5 py-0.5 text-xs font-medium text-green-700 dark:text-green-300">
+                      Published
+                    </span>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
       </div>
     </main>
   );
