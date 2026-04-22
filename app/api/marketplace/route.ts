@@ -87,7 +87,7 @@ export async function GET(request: Request) {
     LEFT JOIN workshop_tag_links wtl  ON wtl.workshop_id = w.id
     LEFT JOIN workshop_tags wt        ON wt.id = wtl.tag_id
     WHERE ${where}
-    GROUP BY w.id, wc.id, p.id
+    GROUP BY w.id, wc.id, p.id, p.display_name, p.avatar_url
     HAVING ${minRating > 0 ? `COALESCE(AVG(wr.rating), 0) >= ${minRating}` : "TRUE"}
     ORDER BY ${orderBy}
     LIMIT $${idx++} OFFSET $${idx++}

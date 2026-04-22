@@ -48,7 +48,7 @@ export async function GET(request: Request) {
          e.workshop_id,
          w.title AS workshop_title,
          NULL AS instructor_name,
-         NULL AS score_pct,
+         NULL::int AS score_pct,
          LEFT(d.body, 120) AS body
        FROM discussions d
        JOIN exercises e ON e.id = d.exercise_id
@@ -63,11 +63,11 @@ export async function GET(request: Request) {
          w.id AS entity_id,
          w.created_at,
          NULL AS exercise_title,
-         NULL AS exercise_id,
+         NULL::uuid AS exercise_id,
          w.id AS workshop_id,
          w.title AS workshop_title,
          p.display_name AS instructor_name,
-         NULL AS score_pct,
+         NULL::int AS score_pct,
          LEFT(w.description, 120) AS body
        FROM follows f
        JOIN workshops w ON w.instructor_id = f.instructor_id AND w.status = 'published'
@@ -90,11 +90,11 @@ export async function GET(request: Request) {
        en.workshop_id AS entity_id,
        en.enrolled_at AS created_at,
        NULL AS exercise_title,
-       NULL AS exercise_id,
+       NULL::uuid AS exercise_id,
        en.workshop_id,
        w.title AS workshop_title,
        p.display_name AS trainee_name,
-       NULL AS score_pct,
+       NULL::int AS score_pct,
        NULL::text AS body
      FROM enrollments en
      JOIN workshops w ON w.id = en.workshop_id
@@ -109,7 +109,7 @@ export async function GET(request: Request) {
        wr.id AS entity_id,
        wr.created_at,
        NULL AS exercise_title,
-       NULL AS exercise_id,
+       NULL::uuid AS exercise_id,
        wr.workshop_id,
        w.title AS workshop_title,
        p.display_name AS trainee_name,
