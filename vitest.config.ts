@@ -10,9 +10,15 @@ export default defineConfig({
     include: ["tests/unit/**/*.test.ts", "tests/integration/**/*.test.ts"],
     coverage: {
       provider: "v8",
-      reporter: ["text", "json", "html"],
+      reporter: ["text", "json", "html", "lcov"],
       include: ["lib/**/*.ts", "app/api/**/*.ts"],
       exclude: ["**/*.d.ts"],
+      thresholds: {
+        lines: 50,
+        functions: 50,
+        branches: 40,
+        statements: 50,
+      },
     },
   },
 });

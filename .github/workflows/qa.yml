@@ -179,8 +179,61 @@ jobs:
           CI: true
 
       - uses: actions/upload-artifact@v4
-        if: failure()
+        if: always()
         with:
           name: playwright-report
           path: playwright-report/
           retention-days: 7
+
+  coverage:
+    name: Coverage
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: prompting_school_test
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+        ports:
+          - 5432:5432
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - run: npm ci
+
+      - name: Apply database schema
+        run: psql -h localhost -U postgres -d prompting_school_test -f docker/init.sql
+        env:
+          PGPASSWORD: postgres
+
+      - name: Run tests with coverage
+        run: npm run test:coverage
+        env:
+          DATABASE_URL: postgres://postgres:postgres@localhost:5432/prompting_school_test
+          SESSION_SECRET: test-session-secret-32-chars-long!!
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          STRIPE_SECRET_KEY: ${{ secrets.STRIPE_SECRET_KEY_TEST }}
+          STRIPE_WEBHOOK_SECRET: ${{ secrets.STRIPE_WEBHOOK_SECRET_TEST }}
+          NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY_TEST }}
+          NEXT_PUBLIC_APP_URL: http://localhost:3000
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+          EMAIL_FROM: noreply@promptingschool.com
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: coverage-report
+          path: coverage/
+          retention-days: 14
